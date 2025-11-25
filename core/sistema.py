@@ -1,5 +1,6 @@
 import threading
 from typing import List, Dict, Tuple
+import hashlib
 from .taxi import Taxi, SolicitudServicio
 
 
