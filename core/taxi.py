@@ -88,7 +88,7 @@ class Taxi(threading.Thread):
             self._viaje_asignado_event.clear()
             self.disponible = True
 
-        def _simular_desplazamiento(self, origen, destino):
+    def _simular_desplazamiento(self, origen, destino):
         dx = destino[0] - origen[0]
         dy = destino[1] - origen[1]
         distancia = sqrt(dx*dx + dy*dy)  # distancia en "unidades" del plano
