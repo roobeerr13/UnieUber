@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Solicitar taxi</h2>
+  <form method="post">
+    <label>ID Cliente:
+      <input type="text" name="cliente_id" value="cliente-web">
+    </label>
+    <br>
+    <label>Origen X:
+      <input type="number" step="0.1" name="x_origen" value="0">
+    </label>
+    <label>Origen Y:
+      <input type="number" step="0.1" name="y_origen" value="0">
+    </label>
+    <br>
+    <label>Destino X:
+      <input type="number" step="0.1" name="x_dest" value="5">
+    </label>
+    <label>Destino Y:
+      <input type="number" step="0.1" name="y_dest" value="5">
+    </label>
+    <br><br>
+    <button type="submit">Pedir taxi</button>
+  </form>
+{% endblock %}
