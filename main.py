@@ -90,6 +90,15 @@ def solicitar_taxi():
             orig_lat, orig_lon = geocode_address(direccion_origen)
             dest_lat, dest_lon = geocode_address(direccion_destino)
 
+            # Si Nominatim no devuelve resultados, usar las coordenadas
+            # deterministas del sistema (convertir_direccion_a_coordenadas)
+            if orig_lat is None or orig_lon is None:
+                ox, oy = sistema.convertir_direccion_a_coordenadas(direccion_origen)
+                orig_lat, orig_lon = ox, oy
+            if dest_lat is None or dest_lon is None:
+                dx_c, dy_c = sistema.convertir_direccion_a_coordenadas(direccion_destino)
+                dest_lat, dest_lon = dx_c, dy_c
+
             dist_km = haversine_km(orig_lat, orig_lon, dest_lat, dest_lon)
             if dist_km is not None:
                 dist_km = round(dist_km, 2)
