@@ -49,118 +49,63 @@
       <div class="map-header">
         <span class="dot live"></span> Vista simulada del mapa
       </div>
-<div class="map-body">
-  {% if direccion_origen and direccion_destino %}
-    <div class="map-inner">
-      <div id="map"></div>
-      <div class="map-badge">
-        <span>Viaje en curso</span>
-        <small>Simulación sobre mapa real</small>
-      </div>
-    </div>
-
-    <script>
-      const originAddress = "{{ direccion_origen | escape }}";
-      const destinationAddress = "{{ direccion_destino | escape }}";
-
-      let map;
-      let directionsService;
-      let directionsRenderer;
-      let carMarker;
-      let routePolyline;
-      let routePath = [];
-      let animIndex = 0;
-      let animTimer = null;
-
-      function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-          zoom: 13,
-          center: { lat: 40.4168, lng: -3.7038 }, // Madrid por defecto
-          mapId: "DEMO_MAP_ID"
-        });
-
-        directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer({
-          map: map,
-          suppressMarkers: true
-        });
-
-        calcularRuta(originAddress, destinationAddress);
-      }
-
-      function calcularRuta(origen, destino) {
-        directionsService.route(
-          {
-            origin: origen,
-            destination: destino,
-            travelMode: google.maps.TravelMode.DRIVING
-          },
-          (result, status) => {
-            if (status === "OK" && result.routes.length > 0) {
-              directionsRenderer.setDirections(result);
-              const route = result.routes[0].overview_path;
-              routePath = route;
-
-              // Marcadores A y B
-              new google.maps.Marker({
-                position: route[0],
-                map: map,
-                label: "A"
-              });
-
-              new google.maps.Marker({
-                position: route[route.length - 1],
-                map: map,
-                label: "B"
-              });
-
-              // Coche (emoji)
-              carMarker = new google.maps.Marker({
-                position: route[0],
-                map: map,
-                label: "",
-                icon: {
-                  url: "https://emojiapi.dev/api/v1/taxi/64.png",
-                  scaledSize: new google.maps.Size(32, 32)
-                }
-              });
-
-              animIndex = 0;
-              animarCoche();
-            } else {
-              console.error("No se pudo calcular la ruta:", status);
+      <div class="map-body">
+        {% if direccion_origen and direccion_destino and orig_lat and orig_lon and dest_lat and dest_lon %}
+          <div class="map-inner">
+            <div id="map" style="height: 400px;"></div>
+            <div class="map-badge">
+              <span>Viaje en curso</span>
+              <small>Simulación sobre mapa real</small>
+            </div>
+          </div>
+          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+          <script>
+            const origLat = parseFloat("{{ orig_lat|default('0') }}");
+            const origLon = parseFloat("{{ orig_lon|default('0') }}");
+            const destLat = parseFloat("{{ dest_lat|default('0') }}");
+            const destLon = parseFloat("{{ dest_lon|default('0') }}");
+            const taxiIcon = L.icon({
+              iconUrl: "https://emojiapi.dev/api/v1/taxi/64.png",
+              iconSize: [32, 32],
+              iconAnchor: [16, 16]
+            });
+            const map = L.map('map').setView([(origLat + destLat)/2, (origLon + destLon)/2], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+              attribution: '© OpenStreetMap'
+            }).addTo(map);
+            // Marcadores origen/destino
+            L.marker([origLat, origLon], {title: "Origen"}).addTo(map).bindPopup("Origen").openPopup();
+            L.marker([destLat, destLon], {title: "Destino"}).addTo(map).bindPopup("Destino");
+            // Línea entre puntos
+            const route = L.polyline([[origLat, origLon], [destLat, destLon]], {color: 'blue'}).addTo(map);
+            // Taxi emoji animado
+            let taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon}).addTo(map);
+            let steps = 100;
+            let i = 0;
+            function animateTaxi() {
+              i++;
+              if (i > steps) return;
+              let lat = origLat + (destLat - origLat) * (i/steps);
+              let lon = origLon + (destLon - origLon) * (i/steps);
+              taxiMarker.setLatLng([lat, lon]);
+              setTimeout(animateTaxi, 30);
             }
-          }
-        );
-      }
-
-      function animarCoche() {
-        if (!routePath || routePath.length === 0) return;
-
-        if (animTimer) {
-          clearInterval(animTimer);
-        }
-
-        animTimer = setInterval(() => {
-          animIndex++;
-          if (animIndex >= routePath.length) {
-            clearInterval(animTimer);
-            return;
-          }
-          const pos = routePath[animIndex];
-          carMarker.setPosition(pos);
-        }, 200); // mueve el coche cada 200 ms
-      }
-    </script>
-  {% else %}
-    <div class="map-placeholder">
-      Introduce origen y destino y verás aquí el mapa real con el taxi moviéndose.
-    </div>
-  {% endif %}
-</div>
-
-
+            animateTaxi();
+          </script>
+        {% else %}
+          <div class="map-placeholder">
+            Introduce origen y destino y verás aquí el mapa real con el taxi moviéndose.
+          </div>
+        {% endif %}
+      </div>
       <div class="map-footer">
+        {% if dist_km and precio %}
+          <div style="margin-top:1em; font-size:1.2em;">
+            🚕 Distancia aprox: <b>{{ dist_km }} km</b> · Precio estimado: <b>{{ precio }} €</b>
+          </div>
+        {% endif %}
         <div>
           <span class="label">Tipo de viaje</span>
           <span class="value">Simulación académica</span>
