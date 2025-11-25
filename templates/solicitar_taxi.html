@@ -49,13 +49,20 @@
       <div class="map-header">
         <span class="dot live"></span> Vista simulada del mapa
       </div>
-      <div class="map-body">
-        <div class="map-grid"></div>
-        <div class="map-route"></div>
-        <div class="map-pin pickup">A</div>
-        <div class="map-pin dropoff">B</div>
-        <div class="map-car">🚕</div>
-      </div>
+<div class="map-body">
+  {% if direccion_origen and direccion_destino %}
+    <iframe
+      src="https://www.google.com/maps?q=from:{{ direccion_origen | urlencode }}+to:{{ direccion_destino | urlencode }}&output=embed"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+  {% else %}
+    <div class="map-placeholder">
+      Introduce origen y destino y verás aquí el mapa de la ruta.
+    </div>
+  {% endif %}
+</div>
+
       <div class="map-footer">
         <div>
           <span class="label">Tipo de viaje</span>

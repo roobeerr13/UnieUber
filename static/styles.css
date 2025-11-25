@@ -385,3 +385,30 @@ body {
     flex-direction: column;
   }
 }
+
+.map-body {
+  position: relative;
+  flex: 1;
+  min-height: 260px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #111;
+}
+
+.map-body iframe {
+  border: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.map-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  color: #aaa;
+  padding: 12px;
+  text-align: center;
+}
+

@@ -35,6 +35,7 @@ def solicitar_taxi():
             [x for x in [dir_d, cp_d, ciudad_d] if x]
         ) or None
 
+        # Lanzamos el hilo cliente
         cliente = Cliente(
             id_cliente=cliente_id,
             sistema_central=sistema,
@@ -44,10 +45,19 @@ def solicitar_taxi():
         )
         cliente.start()
 
-        return redirect(url_for("index"))
+        # En vez de redirect, volvemos a pintar la página con el mapa
+        return render_template(
+            "solicitar_taxi.html",
+            direccion_origen=direccion_origen,
+            direccion_destino=direccion_destino,
+        )
 
-    return render_template("solicitar_taxi.html")
-
+    # GET normal
+    return render_template(
+        "solicitar_taxi.html",
+        direccion_origen=None,
+        direccion_destino=None,
+    )
 
 
 @app.route("/reportes")

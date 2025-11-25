@@ -88,35 +88,32 @@ class Taxi(threading.Thread):
             self._viaje_asignado_event.clear()
             self.disponible = True
 
-    def _simular_desplazamiento(self, origen, destino):
-        """
-        Simula el tiempo de desplazamiento según distancia.
-        Usamos una escala reducida (no real).
-        """
+        def _simular_desplazamiento(self, origen, destino):
         dx = destino[0] - origen[0]
         dy = destino[1] - origen[1]
-        distancia = sqrt(dx*dx + dy*dy)  # unidades arbitrarias
+        distancia = sqrt(dx*dx + dy*dy)  # distancia en "unidades" del plano
 
-        # Convertimos "distancia" a km de forma ficticia
-        km = distancia * 0.5
+        # Consideramos estas unidades como km directamente
+        km = distancia
 
-        # Velocidad en km/h → lo pasamos a segundos (super reducido)
+        # Velocidad en km/h (mínimo por seguridad)
         if self.velocidad_kph <= 0:
             self.velocidad_kph = 40
 
         horas = km / self.velocidad_kph
         segundos = horas * 3600
 
-        # Escala para que no sea eterno
-        segundos_simulados = max(0.2, segundos * 0.02)
+        # Escala para no estar esperando años
+        segundos_simulados = max(0.2, segundos * 0.05)
         time.sleep(segundos_simulados)
 
         return segundos_simulados, km
 
     def _calcular_costo(self, km_viaje):
-        tarifa_base = 2.0
-        tarifa_km = 1.2
+        tarifa_base = 0.5      # medio euro de arranque
+        tarifa_km = 1.0        # 1 euro por km
         return round(tarifa_base + tarifa_km * km_viaje, 2)
+
 
     def actualizar_calificacion(self, nueva_nota: float):
         self.numero_viajes += 1
