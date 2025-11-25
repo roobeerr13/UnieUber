@@ -1,6 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Bienvenida/o a UNIETAXI</h2>
-  <p>Esta es una simulación del sistema de taxis con hilos y sincronización.</p>
-  <p>Puedes solicitar un taxi o ver los reportes.</p>
+  <section class="hero">
+    <div class="hero-copy">
+      <h1>Pide tu viaje en segundos</h1>
+      <p>
+        Esta es una simulación académica del sistema de taxis con hilos,
+        semáforos y sincronización, inspirada en apps tipo Uber.
+      </p>
+      <a href="{{ url_for('solicitar_taxi') }}" class="btn-primary big">
+        Pedir un UNIETAXI
+      </a>
+    </div>
+    <div class="hero-card">
+      <div class="mini-map">
+        <div class="mini-map-route"></div>
+        <div class="mini-map-pin pickup">A</div>
+        <div class="mini-map-pin dropoff">B</div>
+      </div>
+      <div class="mini-info">
+        <div>
+          <span class="label">Estado</span>
+          <span class="value">Simulación activa</span>
+        </div>
+        <div>
+          <span class="label">Taxis en sistema</span>
+          <span class="value">{{ 3 }}</span>  {# si quieres, luego lo sacas del sistema #}
+        </div>
+        <div>
+          <span class="label">Ver reportes</span>
+          <a href="{{ url_for('reportes') }}" class="link-inline">Ir a reportes →</a>
+        </div>
+      </div>
+    </div>
+  </section>
 {% endblock %}

@@ -2,7 +2,11 @@
 {% block content %}
   <div class="uber-container">
     <div class="card">
-      <h2>Solicita tu UNIETAXI</h2>
+      <h2>Solicita tu viaje</h2>
+      <p class="card-subtitle">
+        Introduce tu punto de recogida y destino. Por dentro usamos hilos y semáforos,
+        pero por fuera parece una app normal 😌
+      </p>
       <form method="post" class="uber-form">
         <label>
           ID Cliente
@@ -37,13 +41,31 @@
           <input type="text" name="ciudad_destino" placeholder="Madrid">
         </label>
 
-        <button type="submit" class="btn-primary">Pedir taxi</button>
+        <button type="submit" class="btn-primary">Confirmar viaje</button>
       </form>
     </div>
 
     <div class="map-fake">
-      <p>🗺️ Aquí podría ir un mapa (simulado).</p>
-      <p>Por ahora, usamos las direcciones para calcular posiciones internas.</p>
+      <div class="map-header">
+        <span class="dot live"></span> Vista simulada del mapa
+      </div>
+      <div class="map-body">
+        <div class="map-grid"></div>
+        <div class="map-route"></div>
+        <div class="map-pin pickup">A</div>
+        <div class="map-pin dropoff">B</div>
+        <div class="map-car">🚕</div>
+      </div>
+      <div class="map-footer">
+        <div>
+          <span class="label">Tipo de viaje</span>
+          <span class="value">Simulación académica</span>
+        </div>
+        <div>
+          <span class="label">Estado</span>
+          <span class="value">En espera de solicitud</span>
+        </div>
+      </div>
     </div>
   </div>
 {% endblock %}

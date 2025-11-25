@@ -1,36 +1,53 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Reportes</h2>
+  <h2>Reportes del sistema</h2>
 
-  <h3>Parte I – Diario</h3>
-  <p>Día: {{ diarios.dia }}</p>
-  <p>Ganancia total: {{ diarios.ganancia_total }} €</p>
+  <section class="reports-grid">
+    <div class="card">
+      <h3>Parte I – Reporte diario</h3>
+      <p>Día: <strong>{{ diarios.dia }}</strong></p>
+      <p>Ganancia total: <strong>{{ diarios.ganancia_total }} €</strong></p>
 
-  <h4>Servicios seguidos (hasta 5)</h4>
-  <ul>
-  {% for s in diarios.servicios_seguimiento %}
-    <li>
-      Taxi {{ s.id_taxi }} → Cliente {{ s.id_cliente }}<br>
-      Origen: {{ s.direccion_origen or s.origen }}<br>
-      Destino: {{ s.direccion_destino or s.destino }}<br>
-      Km: {{ s.km }} | Costo: {{ s.costo }} € | Calificación: {{ s.calificacion }}
-    </li>
-  {% else %}
-    <li>No hay servicios aún.</li>
-  {% endfor %}
-  </ul>
+      <h4>Servicios seguidos (hasta 5)</h4>
+      <ul class="list">
+      {% for s in diarios.servicios_seguimiento %}
+        <li>
+          <div class="list-title">
+            Taxi {{ s.id_taxi }} → Cliente {{ s.id_cliente }}
+          </div>
+          <div class="list-body">
+            Origen:
+            {{ s.direccion_origen or s.origen }}<br>
+            Destino:
+            {{ s.direccion_destino or s.destino }}<br>
+            Km: {{ s.km }} • Costo: {{ s.costo }} € • Calificación: {{ s.calificacion }}
+          </div>
+        </li>
+      {% else %}
+        <li>No hay servicios aún.</li>
+      {% endfor %}
+      </ul>
+    </div>
 
-  <h3>Parte II – Mensual (resumen por taxista)</h3>
-  <ul>
-  {% for t in mensuales %}
-    <li>
-      ID Taxi: {{ t.id_taxi }} ({{ t.nombre }}, {{ t.placa }})<br>
-      Total generado: {{ t.total_generado }} €<br>
-      Importe mensual (20%): {{ t.importe_mensual }} €<br>
-      Ganancia taxista (80%): {{ t.ganancia_taxista }} €
-    </li>
-  {% else %}
-    <li>No hay datos de taxis.</li>
-  {% endfor %}
-  </ul>
+    <div class="card">
+      <h3>Parte II – Resumen por taxista</h3>
+      <ul class="list">
+      {% for t in mensuales %}
+        <li>
+          <div class="list-title">
+            Taxi {{ t.id_taxi }} – {{ t.nombre }} ({{ t.placa }})
+          </div>
+          <div class="list-body">
+            Total generado: {{ t.total_generado }} €<br>
+            Importe mensual (20%): {{ t.importe_mensual }} €<br>
+            Ganancia taxista (80%): {{ t.ganancia_taxista }} €
+          </div>
+        </li>
+      {% else %}
+        <li>No hay datos de taxis todavía.</li>
+      {% endfor %}
+      </ul>
+    </div>
+  </section>
 {% endblock %}
+
