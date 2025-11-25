@@ -189,13 +189,14 @@ class SistemaCentral:
 
         reportes_mensuales = []
         for taxi in self.taxis:
+            total_generado = self.ganancia_por_taxi.get(taxi.id_taxi, 0.0)
             reportes_mensuales.append({
                 "id_taxi": taxi.id_taxi,
                 "nombre": taxi.nombre,
                 "placa": taxi.placa,
-                "total_generado": self.ganancia_por_taxi.get(taxi.id_taxi, 0.0),
-                "ganancia_taxista": taxi.ganancia_acumulada * 0.8,  # por ejemplo
-                "importe_mensual": taxi.ganancia_acumulada * 0.2,
+                "total_generado": total_generado,
+                "ganancia_taxista": total_generado * 0.8,
+                "importe_mensual": total_generado * 0.2,
             })
 
         return reportes_diarios, reportes_mensuales
