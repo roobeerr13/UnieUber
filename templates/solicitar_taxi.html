@@ -1,25 +1,49 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Solicitar taxi</h2>
-  <form method="post">
-    <label>ID Cliente:
-      <input type="text" name="cliente_id" value="cliente-web">
-    </label>
-    <br>
-    <label>Origen X:
-      <input type="number" step="0.1" name="x_origen" value="0">
-    </label>
-    <label>Origen Y:
-      <input type="number" step="0.1" name="y_origen" value="0">
-    </label>
-    <br>
-    <label>Destino X:
-      <input type="number" step="0.1" name="x_dest" value="5">
-    </label>
-    <label>Destino Y:
-      <input type="number" step="0.1" name="y_dest" value="5">
-    </label>
-    <br><br>
-    <button type="submit">Pedir taxi</button>
-  </form>
+  <div class="uber-container">
+    <div class="card">
+      <h2>Solicita tu UNIETAXI</h2>
+      <form method="post" class="uber-form">
+        <label>
+          ID Cliente
+          <input type="text" name="cliente_id" value="cliente-web">
+        </label>
+
+        <h3>Origen</h3>
+        <label>
+          Calle y número
+          <input type="text" name="direccion_origen" placeholder="Calle Mayor 12">
+        </label>
+        <label>
+          Código Postal
+          <input type="text" name="cp_origen" placeholder="28013">
+        </label>
+        <label>
+          Ciudad
+          <input type="text" name="ciudad_origen" placeholder="Madrid">
+        </label>
+
+        <h3>Destino</h3>
+        <label>
+          Calle y número
+          <input type="text" name="direccion_destino" placeholder="Av. de América 45">
+        </label>
+        <label>
+          Código Postal
+          <input type="text" name="cp_destino" placeholder="28028">
+        </label>
+        <label>
+          Ciudad
+          <input type="text" name="ciudad_destino" placeholder="Madrid">
+        </label>
+
+        <button type="submit" class="btn-primary">Pedir taxi</button>
+      </form>
+    </div>
+
+    <div class="map-fake">
+      <p>🗺️ Aquí podría ir un mapa (simulado).</p>
+      <p>Por ahora, usamos las direcciones para calcular posiciones internas.</p>
+    </div>
+  </div>
 {% endblock %}

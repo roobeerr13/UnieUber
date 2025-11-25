@@ -64,6 +64,20 @@ class SistemaCentral:
             # El taxi seguirá el flujo y al terminar llamará a registrar_final_viaje()
             print(f"[Sistema] Taxi {taxi_asignado.id_taxi} asignado al cliente {solicitud.id_cliente}")
 
+    def convertir_direccion_a_coordenadas(self, direccion: str) -> tuple[float, float]:
+        """
+        Convierte una dirección tipo texto en unas coordenadas (x, y) ficticias
+        pero deterministas, para poder calcular distancias.
+        """
+        if not direccion:
+            return (0.0, 0.0)
+
+        h = int(hashlib.md5(direccion.encode("utf-8")).hexdigest(), 16)
+        x = (h % 100) / 10.0          # 0.0 - 9.9
+        y = ((h // 100) % 100) / 10.0 # 0.0 - 9.9
+        return (x, y)
+
+
     def _match(self, solicitud: SolicitudServicio) -> Taxi | None:
         from math import sqrt
 
@@ -129,6 +143,8 @@ class SistemaCentral:
                 "id_cliente": solicitud.id_cliente,
                 "origen": solicitud.origen,
                 "destino": solicitud.destino,
+                "direccion_origen": getattr(solicitud, "direccion_origen", None),
+                "direccion_destino": getattr(solicitud, "direccion_destino", None),
                 "km": km,
                 "costo": costo,
                 "calificacion": calificacion,
@@ -142,11 +158,12 @@ class SistemaCentral:
             "id_cliente": solicitud.id_cliente,
             "origen": solicitud.origen,
             "destino": solicitud.destino,
+            "direccion_origen": getattr(solicitud, "direccion_origen", None),
+            "direccion_destino": getattr(solicitud, "direccion_destino", None),
             "km": km,
             "costo": costo,
             "calificacion": calificacion,
         })
-
     def _finalizar_servicio_con_viaje(self):
         with self.mutex_findeldia:
             self.servicios_activos -= 1

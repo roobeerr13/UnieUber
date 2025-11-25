@@ -18,19 +18,28 @@ def index():
 def solicitar_taxi():
     if request.method == "POST":
         cliente_id = request.form.get("cliente_id", "cliente-web")
-        try:
-            x_origen = float(request.form.get("x_origen", 0))
-            y_origen = float(request.form.get("y_origen", 0))
-            x_dest = float(request.form.get("x_dest", 5))
-            y_dest = float(request.form.get("y_dest", 5))
-        except ValueError:
-            x_origen, y_origen, x_dest, y_dest = 0, 0, 5, 5
+
+        # Origen
+        dir_o = request.form.get("direccion_origen", "").strip()
+        cp_o = request.form.get("cp_origen", "").strip()
+        ciudad_o = request.form.get("ciudad_origen", "").strip()
+        direccion_origen = ", ".join(
+            [x for x in [dir_o, cp_o, ciudad_o] if x]
+        ) or None
+
+        # Destino
+        dir_d = request.form.get("direccion_destino", "").strip()
+        cp_d = request.form.get("cp_destino", "").strip()
+        ciudad_d = request.form.get("ciudad_destino", "").strip()
+        direccion_destino = ", ".join(
+            [x for x in [dir_d, cp_d, ciudad_d] if x]
+        ) or None
 
         cliente = Cliente(
             id_cliente=cliente_id,
             sistema_central=sistema,
-            origen=(x_origen, y_origen),
-            destino=(x_dest, y_dest),
+            direccion_origen=direccion_origen,
+            direccion_destino=direccion_destino,
             dia=sistema.dia_actual
         )
         cliente.start()
@@ -38,6 +47,7 @@ def solicitar_taxi():
         return redirect(url_for("index"))
 
     return render_template("solicitar_taxi.html")
+
 
 
 @app.route("/reportes")

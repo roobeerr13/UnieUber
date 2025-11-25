@@ -1,15 +1,21 @@
 import threading
 import time
 import random
+import hashlib
 from math import sqrt
 
 
 class SolicitudServicio:
-    def __init__(self, id_cliente, origen, destino, dia=1):
+    def __init__(self, id_cliente, origen, destino, dia=1,
+                 direccion_origen=None, direccion_destino=None):
         self.id_cliente = id_cliente
-        self.origen = origen      # (x, y)
+        self.origen = origen      # (x, y) para cálculos internos
         self.destino = destino    # (x, y)
         self.dia = dia
+        # Direcciones legibles para mostrar en la interfaz / reportes
+        self.direccion_origen = direccion_origen
+        self.direccion_destino = direccion_destino
+
 
 
 class Taxi(threading.Thread):
