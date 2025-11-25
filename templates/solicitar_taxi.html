@@ -51,17 +51,114 @@
       </div>
 <div class="map-body">
   {% if direccion_origen and direccion_destino %}
-    <iframe
-      src="https://www.google.com/maps?q=from:{{ direccion_origen | urlencode }}+to:{{ direccion_destino | urlencode }}&output=embed"
-      loading="lazy"
-      referrerpolicy="no-referrer-when-downgrade">
-    </iframe>
+    <div class="map-inner">
+      <div id="map"></div>
+      <div class="map-badge">
+        <span>Viaje en curso</span>
+        <small>Simulación sobre mapa real</small>
+      </div>
+    </div>
+
+    <script>
+      const originAddress = "{{ direccion_origen | escape }}";
+      const destinationAddress = "{{ direccion_destino | escape }}";
+
+      let map;
+      let directionsService;
+      let directionsRenderer;
+      let carMarker;
+      let routePolyline;
+      let routePath = [];
+      let animIndex = 0;
+      let animTimer = null;
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 13,
+          center: { lat: 40.4168, lng: -3.7038 }, // Madrid por defecto
+          mapId: "DEMO_MAP_ID"
+        });
+
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+          map: map,
+          suppressMarkers: true
+        });
+
+        calcularRuta(originAddress, destinationAddress);
+      }
+
+      function calcularRuta(origen, destino) {
+        directionsService.route(
+          {
+            origin: origen,
+            destination: destino,
+            travelMode: google.maps.TravelMode.DRIVING
+          },
+          (result, status) => {
+            if (status === "OK" && result.routes.length > 0) {
+              directionsRenderer.setDirections(result);
+              const route = result.routes[0].overview_path;
+              routePath = route;
+
+              // Marcadores A y B
+              new google.maps.Marker({
+                position: route[0],
+                map: map,
+                label: "A"
+              });
+
+              new google.maps.Marker({
+                position: route[route.length - 1],
+                map: map,
+                label: "B"
+              });
+
+              // Coche (emoji)
+              carMarker = new google.maps.Marker({
+                position: route[0],
+                map: map,
+                label: "",
+                icon: {
+                  url: "https://emojiapi.dev/api/v1/taxi/64.png",
+                  scaledSize: new google.maps.Size(32, 32)
+                }
+              });
+
+              animIndex = 0;
+              animarCoche();
+            } else {
+              console.error("No se pudo calcular la ruta:", status);
+            }
+          }
+        );
+      }
+
+      function animarCoche() {
+        if (!routePath || routePath.length === 0) return;
+
+        if (animTimer) {
+          clearInterval(animTimer);
+        }
+
+        animTimer = setInterval(() => {
+          animIndex++;
+          if (animIndex >= routePath.length) {
+            clearInterval(animTimer);
+            return;
+          }
+          const pos = routePath[animIndex];
+          carMarker.setPosition(pos);
+        }, 200); // mueve el coche cada 200 ms
+      }
+    </script>
   {% else %}
     <div class="map-placeholder">
-      Introduce origen y destino y verás aquí el mapa de la ruta.
+      Introduce origen y destino y verás aquí el mapa real con el taxi moviéndose.
     </div>
   {% endif %}
 </div>
+
 
       <div class="map-footer">
         <div>

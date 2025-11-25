@@ -420,19 +420,17 @@ body {
   background: #111;
 }
 
-.map-inner {
-  position: relative;
+#map {
   width: 100%;
   height: 100%;
 }
 
-.map-inner iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
+.taxi-icon {
+  font-size: 22px;
+  line-height: 22px;
+  text-align: center;
 }
+
 
 /* Coche animado sobre el mapa */
 .map-car-anim {
