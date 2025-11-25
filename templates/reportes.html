@@ -20,7 +20,7 @@
             {{ s.direccion_origen or s.origen }}<br>
             Destino:
             {{ s.direccion_destino or s.destino }}<br>
-            Km: {{ s.km }} • Costo: {{ s.costo }} € • Calificación: {{ s.calificacion }}
+            Km: {{ '%.2f'|format(s.km) }} • Costo: {{ '%.2f'|format(s.costo|default(0.0)) }} € • Calificación: {{ s.calificacion }}
           </div>
         </li>
       {% else %}
@@ -38,44 +38,53 @@
             Taxi {{ t.id_taxi }} – {{ t.nombre }} ({{ t.placa }})
           </div>
           <div class="list-body">
-            Total generado: {{ t.total_generado }} €<br>
-            Importe mensual (20%): {{ t.importe_mensual }} €<br>
-            Ganancia taxista (80%): {{ t.ganancia_taxista }} €
+            Total generado: {{ '%.2f'|format(t.total_generado|default(0.0)) }} €<br>
+            Importe mensual (20%): {{ '%.2f'|format(t.importe_mensual|default(0.0)) }} €<br>
+            Ganancia taxista (80%): {{ '%.2f'|format(t.ganancia_taxista|default(0.0)) }} €
           </div>
         </li>
       {% else %}
         <li>No hay datos de taxis todavía.</li>
       {% endfor %}
       </ul>
+      {% if mensuales|length > 0 %}
       <div style="margin-top:2em;">
         <canvas id="taxiBarChart" height="180"></canvas>
       </div>
+      <!-- Datos serializados en JSON para evitar errores de sintaxis JS/Jinja -->
+      <script id="mensualesData" type="application/json">{{ mensuales|tojson }}</script>
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <script>
-        const taxiLabels = [{{ mensuales|map(attribute='nombre')|map('tojson')|join(', ') }}];
-        const taxiGanancias = [{{ mensuales|map(attribute='ganancia_taxista')|join(', ') }}];
-        const ctx = document.getElementById('taxiBarChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: taxiLabels,
-            datasets: [{
-              label: 'Ganancia taxista (€)',
-              data: taxiGanancias,
-              backgroundColor: 'rgba(255, 206, 86, 0.7)',
-              borderColor: 'rgba(255, 206, 86, 1)',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            scales: {
-              y: {
-                beginAtZero: true
+        try {
+          const mensualesData = JSON.parse(document.getElementById('mensualesData').textContent || '[]');
+          const taxiLabels = mensualesData.map(t => t.nombre || '');
+          const taxiGanancias = mensualesData.map(t => Number((t.ganancia_taxista || 0).toFixed(2)));
+          const ctx = document.getElementById('taxiBarChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: taxiLabels,
+              datasets: [{
+                label: 'Ganancia taxista (€)',
+                data: taxiGanancias,
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
               }
             }
-          }
-        });
+          });
+        } catch (e) {
+          console.error('Error inicializando la gráfica:', e);
+        }
       </script>
+      {% endif %}
     </div>
   </section>
 {% endblock %}

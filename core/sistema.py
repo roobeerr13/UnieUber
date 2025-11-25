@@ -83,8 +83,13 @@ class SistemaCentral:
         from math import sqrt
 
         with self.mutex_match:
+            # Selección de taxi: buscamos un equilibrio entre distancia y carga
+            # Para evitar que siempre el mismo taxi reciba todos los servicios (por ejemplo
+            # si las direcciones hashadas caen cerca de un taxi concreto), penalizamos taxis
+            # con más viajes usando un score = distancia + carga_factor * numero_viajes.
             mejor_taxi = None
-            mejor_distancia = float("inf")
+            mejor_score = float("inf")
+            carga_factor = 1.5  # ajustable: cuanto mayor, más se priorizan taxis con menos viajes
 
             for taxi in self.taxis:
                 if not taxi.disponible:
@@ -93,8 +98,11 @@ class SistemaCentral:
                 dy = taxi.posicion[1] - solicitud.origen[1]
                 distancia = sqrt(dx*dx + dy*dy)
 
-                if distancia < mejor_distancia:
-                    mejor_distancia = distancia
+                # Score combina distancia y número de viajes previos
+                score = distancia + carga_factor * getattr(taxi, 'numero_viajes', 0)
+
+                if score < mejor_score:
+                    mejor_score = score
                     mejor_taxi = taxi
 
             if mejor_taxi is not None:

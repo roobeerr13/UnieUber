@@ -50,7 +50,7 @@
         <span class="dot live"></span> Vista simulada del mapa
       </div>
       <div class="map-body">
-        {% if direccion_origen and direccion_destino and orig_lat and orig_lon and dest_lat and dest_lon %}
+        {% if direccion_origen and direccion_destino and orig_lat is not none and orig_lon is not none and dest_lat is not none and dest_lon is not none %}
           <div class="map-inner">
             <div id="map" style="height: 400px;"></div>
             <div class="map-badge">
@@ -101,9 +101,9 @@
         {% endif %}
       </div>
       <div class="map-footer">
-        {% if dist_km and precio %}
+        {% if dist_km is not none and precio is not none %}
           <div style="margin-top:1em; font-size:1.2em;">
-            🚕 Distancia aprox: <b>{{ dist_km }} km</b> · Precio estimado: <b>{{ precio }} €</b>
+            🚕 Distancia aprox: <b>{{ '%.2f'|format(dist_km) }} km</b> · Precio estimado: <b>{{ '%.2f'|format(precio) }} €</b>
           </div>
         {% endif %}
         <div>
