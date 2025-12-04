@@ -38,9 +38,9 @@
             Taxi {{ t.id_taxi }} – {{ t.nombre }} ({{ t.placa }})
           </div>
           <div class="list-body">
-            Total generado: {{ '%.2f'|format(t.total_generado|default(0.0)) }} €<br>
-            Importe mensual (20%): {{ '%.2f'|format(t.importe_mensual|default(0.0)) }} €<br>
-            Ganancia taxista (80%): {{ '%.2f'|format(t.ganancia_taxista|default(0.0)) }} €
+            Total generado: <strong style="color: #00c46a;">{{ '%.2f'|format(t.total_generado|default(0.0)) }} €</strong><br>
+            Importe mensual (20%): <strong>{{ '%.2f'|format(t.importe_mensual|default(0.0)) }} €</strong><br>
+            Ganancia taxista (80%): <strong style="color: #ffb703;">{{ '%.2f'|format(t.ganancia_taxista|default(0.0)) }} €</strong>
           </div>
         </li>
       {% else %}
@@ -86,6 +86,28 @@
       </script>
       {% endif %}
     </div>
+    
+    {% if resumenes_diarios %}
+    <div class="card">
+      <h3>Resúmenes Diarios Históricos</h3>
+      <ul class="list">
+      {% for resumen in resumenes_diarios %}
+        <li>
+          <div class="list-title">
+            📊 {{ resumen.fecha }}
+          </div>
+          <div class="list-body">
+            Viajes totales: <strong>{{ resumen.viajes_totales }}</strong><br>
+            Ganancias totales: <strong style="color: #00c46a;">{{ '%.2f'|format(resumen.ganancias_totales) }} €</strong><br>
+            Ganancias tarifa alta: <strong style="color: #ffb703;">{{ '%.2f'|format(resumen.ganancias_tarifa_alta) }} €</strong><br>
+            Conductor más activo: {{ resumen.conductor_mas_viajes }}<br>
+            Cliente más frecuente: {{ resumen.cliente_mas_frecuente }}
+          </div>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
   </section>
 {% endblock %}
 

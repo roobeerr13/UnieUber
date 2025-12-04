@@ -32,6 +32,11 @@ class Taxi(threading.Thread):
         self.calificacion_media = 5.0
         self.numero_viajes = 0
         self.ganancia_acumulada = 0.0
+        
+        # Atributos para el sistema de asignación avanzado (Senafiris)
+        self.viajes_hoy = 0  # Contador diario de viajes
+        self.tiempo_desde_ultimo_viaje = 3600  # segundos (inicialmente una hora)
+        self.ultima_actualizacion_tiempo = time.time()
 
         # Sincronización con el SistemaCentral
         self._viaje_asignado_event = threading.Event()
@@ -68,8 +73,8 @@ class Taxi(threading.Thread):
             self.posicion = solicitud.destino
             km_totales = km_hasta_cliente + km_viaje
 
-            # Cálculo simple de costo
-            costo = self._calcular_costo(km_viaje)
+            # Cálculo de costo usando tarifas dinámicas del sistema
+            costo = self._calcular_costo(km_viaje, solicitud)
 
             # Simulamos calificación del cliente (1–5)
             calificacion = random.randint(3, 5)
@@ -109,9 +114,30 @@ class Taxi(threading.Thread):
 
         return segundos_simulados, km
 
-    def _calcular_costo(self, km_viaje):
-        tarifa_base = 0.5      # medio euro de arranque
-        tarifa_km = 1.0        # 1 euro por km
+    def _calcular_costo(self, km_viaje, solicitud=None):
+        """
+        Calcula el costo del viaje usando tarifas dinámicas.
+        Si la solicitud tiene tarifas definidas (del sistema de asignación), las usa.
+        Si no, usa tarifas por defecto.
+        """
+        if solicitud and hasattr(solicitud, 'tarifa_base') and hasattr(solicitud, 'tarifa_km'):
+            tarifa_base = solicitud.tarifa_base
+            tarifa_km = solicitud.tarifa_km
+        else:
+            # Fallback: usar tarifas del sistema de asignación si está disponible
+            if hasattr(self.sistema_central, 'sistema_asignacion'):
+                sistema_asignacion = self.sistema_central.sistema_asignacion
+                if sistema_asignacion.modo_tarifa_alta:
+                    tarifa_base = sistema_asignacion.tarifa_base_alta
+                    tarifa_km = sistema_asignacion.tarifa_km_alta
+                else:
+                    tarifa_base = sistema_asignacion.tarifa_base_normal
+                    tarifa_km = sistema_asignacion.tarifa_km_normal
+            else:
+                # Tarifas por defecto
+                tarifa_base = 0.5
+                tarifa_km = 1.0
+        
         return round(tarifa_base + tarifa_km * km_viaje, 2)
 
 

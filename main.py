@@ -69,6 +69,8 @@ def solicitar_taxi():
     direccion_origen = direccion_destino = None
     orig_lat = orig_lon = dest_lat = dest_lon = None
     dist_km = precio = None
+    taxi_info = None
+    cliente_info = None
 
     if request.method == "POST":
         cliente_id = request.form.get("cliente_id", "cliente-web")
@@ -102,7 +104,17 @@ def solicitar_taxi():
             dist_km = haversine_km(orig_lat, orig_lon, dest_lat, dest_lon)
             if dist_km is not None:
                 dist_km = round(dist_km, 2)
-                precio = round(0.5 + 1.0 * dist_km, 2)
+                # Usar tarifas dinámicas del sistema de asignación
+                precio = sistema.sistema_asignacion.calcular_tarifa(dist_km)
+
+        # Obtener información del cliente mejorado
+        cliente_mejorado = sistema._obtener_cliente_mejorado(cliente_id)
+        cliente_info = {
+            "id": cliente_mejorado.id_cliente,
+            "nombre": cliente_mejorado.nombre,
+            "frecuencia": cliente_mejorado.frecuencia,
+            "estrellas": cliente_mejorado.estrellas
+        }
 
         # Lanzamos el hilo Cliente (para la simulación interna)
         cliente = Cliente(
@@ -113,6 +125,34 @@ def solicitar_taxi():
             dia=sistema.dia_actual
         )
         cliente.start()
+        
+        # Esperar un momento para que se procese la solicitud y obtener info del taxi
+        import time
+        time.sleep(0.3)  # Pequeña espera para que se procese la asignación
+        
+        # Buscar el último servicio en servicios_control para obtener info del taxi asignado
+        # También buscar en servicios_seguimiento que se actualiza más rápido
+        servicios_recientes = sistema.servicios_seguimiento[-1:] if sistema.servicios_seguimiento else []
+        if not servicios_recientes and sistema.servicios_control:
+            servicios_recientes = sistema.servicios_control[-1:]
+        
+        for servicio in servicios_recientes:
+            if servicio.get("aceptado") and servicio.get("id_taxi"):
+                taxi_id = servicio["id_taxi"]
+                # Buscar el taxi en la lista
+                for taxi in sistema.taxis:
+                    if taxi.id_taxi == taxi_id:
+                        taxi_info = {
+                            "id": taxi.id_taxi,
+                            "nombre": taxi.nombre,
+                            "placa": taxi.placa,
+                            "calificacion": round(taxi.calificacion_media, 1),
+                            "viajes_hoy": taxi.viajes_hoy,
+                            "motivo": servicio.get("motivo_seleccion", "distancia")
+                        }
+                        break
+                if taxi_info:
+                    break
 
     return render_template(
         "solicitar_taxi.html",
@@ -124,13 +164,25 @@ def solicitar_taxi():
         dest_lon=dest_lon,
         dist_km=dist_km,
         precio=precio,
+        taxi_info=taxi_info,
+        cliente_info=cliente_info,
+        modo_tarifa_alta=sistema.sistema_asignacion.modo_tarifa_alta,
     )
 
 
 @app.route("/reportes")
 def reportes():
     diarios, mensuales = sistema.obtener_reportes()
-    return render_template("reportes.html", diarios=diarios, mensuales=mensuales)
+    # Agregar información del sistema de asignación
+    resumenes_diarios = sistema.sistema_asignacion.resumen_diarios
+    modo_tarifa_alta = sistema.sistema_asignacion.modo_tarifa_alta
+    return render_template(
+        "reportes.html", 
+        diarios=diarios, 
+        mensuales=mensuales,
+        resumenes_diarios=resumenes_diarios,
+        modo_tarifa_alta=modo_tarifa_alta
+    )
 
 
 if __name__ == "__main__":

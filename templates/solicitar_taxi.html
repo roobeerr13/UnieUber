@@ -102,17 +102,45 @@
       </div>
       <div class="map-footer">
         {% if dist_km is not none and precio is not none %}
-          <div style="margin-top:1em; font-size:1.2em;">
+          <div style="margin-top:1em; font-size:1.2em; margin-bottom: 12px;">
             🚕 Distancia aprox: <b>{{ '%.2f'|format(dist_km) }} km</b> · Precio estimado: <b>{{ '%.2f'|format(precio) }} €</b>
+            {% if modo_tarifa_alta %}
+              <span style="color: #ffb703; font-size: 0.9em;">🌙 Tarifa Alta</span>
+            {% endif %}
           </div>
         {% endif %}
+        
+        {% if taxi_info %}
+          <div style="background: rgba(0, 196, 106, 0.1); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(0, 196, 106, 0.3);">
+            <div style="font-weight: 600; margin-bottom: 6px; color: #00c46a;">🚖 Taxi Asignado</div>
+            <div style="font-size: 13px;">
+              <div><strong>{{ taxi_info.nombre }}</strong> (Placa: {{ taxi_info.placa }})</div>
+              <div style="color: #aaa; margin-top: 4px;">
+                ⭐ Calificación: {{ taxi_info.calificacion }} · Viajes hoy: {{ taxi_info.viajes_hoy }}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        
+        {% if cliente_info %}
+          <div style="background: rgba(255, 183, 3, 0.1); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255, 183, 3, 0.3);">
+            <div style="font-weight: 600; margin-bottom: 6px; color: #ffb703;">👤 Tu Perfil</div>
+            <div style="font-size: 13px;">
+              <div>Frecuencia: <strong>{{ cliente_info.frecuencia }}</strong> viajes</div>
+              <div style="color: #aaa; margin-top: 4px;">
+                Estrellas: {% for i in range(cliente_info.estrellas) %}⭐{% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        
         <div>
           <span class="label">Tipo de viaje</span>
           <span class="value">Simulación académica</span>
         </div>
         <div>
           <span class="label">Estado</span>
-          <span class="value">En espera de solicitud</span>
+          <span class="value">{% if taxi_info %}Taxi asignado{% else %}En espera de solicitud{% endif %}</span>
         </div>
       </div>
     </div>

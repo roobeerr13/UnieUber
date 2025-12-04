@@ -16,12 +16,44 @@
         <span class="brand-subtitle">UNIETAXI Simulator</span>
       </div>
     </div>
+    <div class="clock-container" id="clockContainer">
+      <div class="clock-time" id="clockTime">--:--:--</div>
+      <div class="clock-status" id="clockStatus">
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="tarifaStatus">Tarifa Normal</span>
+      </div>
+    </div>
     <nav class="nav-links">
       <a href="{{ url_for('index') }}">Inicio</a>
       <a href="{{ url_for('solicitar_taxi') }}">Pedir viaje</a>
       <a href="{{ url_for('reportes') }}">Reportes</a>
     </nav>
   </header>
+  <script>
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clockTime').textContent = `${hours}:${minutes}:${seconds}`;
+      
+      // Determinar estado de tarifa (alta después de las 21:00)
+      const hora = now.getHours();
+      const isTarifaAlta = hora >= 21 || hora < 6;
+      const statusIndicator = document.getElementById('statusIndicator');
+      const tarifaStatus = document.getElementById('tarifaStatus');
+      
+      if (isTarifaAlta) {
+        statusIndicator.className = 'status-indicator alta';
+        tarifaStatus.textContent = 'Tarifa Alta 🌙';
+      } else {
+        statusIndicator.className = 'status-indicator normal';
+        tarifaStatus.textContent = 'Tarifa Normal ☀️';
+      }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
 
   <div class="page-wrapper">
     {% block content %}{% endblock %}

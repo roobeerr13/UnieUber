@@ -1,7 +1,10 @@
 import threading
+import time
 from typing import List, Dict, Tuple
 import hashlib
 from .taxi import Taxi, SolicitudServicio
+from .sistema_asignacion import SistemaAsignacion
+from .cliente_mejorado import ClienteMejorado
 
 
 class SistemaCentral:
@@ -25,6 +28,14 @@ class SistemaCentral:
 
         # Para simplificar, trabajamos con un solo día (dia = 1)
         self.dia_actual = 1
+
+        # Sistema de asignación avanzado (Senafiris, tarifas dinámicas, etc.)
+        self.sistema_asignacion = SistemaAsignacion()
+        # Pasar referencia al sistema central para el resumen diario
+        self.sistema_asignacion._sistema_central = self
+        
+        # Registro de clientes mejorados (para frecuencia y estrellas)
+        self.clientes_mejorados: Dict[str, ClienteMejorado] = {}
 
         # Inicializar algunos taxis de prueba
         self._inicializar_taxis_demo()
@@ -80,35 +91,61 @@ class SistemaCentral:
 
 
     def _match(self, solicitud: SolicitudServicio) -> Taxi | None:
-        from math import sqrt
-
+        """
+        Selecciona el mejor taxi para una solicitud usando el sistema de asignación avanzado.
+        Integra distancia, Senafiris y prioridad de clientes.
+        """
         with self.mutex_match:
-            # Selección de taxi: buscamos un equilibrio entre distancia y carga
-            # Para evitar que siempre el mismo taxi reciba todos los servicios (por ejemplo
-            # si las direcciones hashadas caen cerca de un taxi concreto), penalizamos taxis
-            # con más viajes usando un score = distancia + carga_factor * numero_viajes.
-            mejor_taxi = None
-            mejor_score = float("inf")
-            carga_factor = 1.5  # ajustable: cuanto mayor, más se priorizan taxis con menos viajes
+            # Obtener o crear cliente mejorado para frecuencia/estrellas
+            cliente_mejorado = self._obtener_cliente_mejorado(solicitud.id_cliente)
+            
+            # Crear objeto temporal con posición para el sistema de asignación
+            class ClienteTemp:
+                def __init__(self, cliente_mejorado, posicion):
+                    self.id_cliente = cliente_mejorado.id_cliente
+                    self.nombre = cliente_mejorado.nombre
+                    self.frecuencia = cliente_mejorado.frecuencia
+                    self.estrellas = cliente_mejorado.estrellas
+                    self.posicion = posicion
+            
+            cliente_temp = ClienteTemp(cliente_mejorado, solicitud.origen)
+            
+            # Usar el sistema de asignación avanzado
+            resultado = self.sistema_asignacion.seleccionar_conductor_para_cliente(
+                cliente_temp, self.taxis
+            )
+            
+            if resultado is None:
+                return None
+            
+            taxi_seleccionado = resultado["conductor"]
+            motivo = resultado["motivo"]
+            
+            print(f"[Sistema] Taxi {taxi_seleccionado.id_taxi} seleccionado para cliente {solicitud.id_cliente} "
+                  f"(motivo: {motivo}, distancia: {resultado['distancia']:.2f} km, "
+                  f"estrellas cliente: {resultado['cliente_estrellas']}⭐)")
+            
+            # Almacenar información de tarifa en la solicitud para uso posterior
+            solicitud.tarifa_base = resultado["tarifa_base"]
+            solicitud.tarifa_km = resultado["tarifa_km"]
+            solicitud.motivo_seleccion = motivo
+            
+            if taxi_seleccionado is not None:
+                taxi_seleccionado.asignar_viaje(solicitud)
 
-            for taxi in self.taxis:
-                if not taxi.disponible:
-                    continue
-                dx = taxi.posicion[0] - solicitud.origen[0]
-                dy = taxi.posicion[1] - solicitud.origen[1]
-                distancia = sqrt(dx*dx + dy*dy)
-
-                # Score combina distancia y número de viajes previos
-                score = distancia + carga_factor * getattr(taxi, 'numero_viajes', 0)
-
-                if score < mejor_score:
-                    mejor_score = score
-                    mejor_taxi = taxi
-
-            if mejor_taxi is not None:
-                mejor_taxi.asignar_viaje(solicitud)
-
-            return mejor_taxi
+            return taxi_seleccionado
+    
+    def _obtener_cliente_mejorado(self, id_cliente: str) -> ClienteMejorado:
+        """
+        Obtiene o crea un ClienteMejorado para un cliente dado.
+        """
+        if id_cliente not in self.clientes_mejorados:
+            self.clientes_mejorados[id_cliente] = ClienteMejorado(
+                id_cliente=id_cliente,
+                nombre=f"Cliente-{id_cliente}",
+                frecuencia=0
+            )
+        return self.clientes_mejorados[id_cliente]
 
     def registrar_final_viaje(self, taxi: Taxi, solicitud: SolicitudServicio,
                               km: float, costo: float, calificacion: float):
@@ -116,10 +153,28 @@ class SistemaCentral:
         with self.mutex_servicio:
             taxi.actualizar_calificacion(calificacion)
             taxi.acumular_ganancia(costo)
+            
+            # Actualizar contadores Senafiris del taxi
+            taxi.viajes_hoy += 1
+            taxi.tiempo_desde_ultimo_viaje = 0
+            taxi.ultima_actualizacion_tiempo = time.time()
 
             # Ganancia por taxi
             self.ganancia_por_taxi[taxi.id_taxi] = self.ganancia_por_taxi.get(taxi.id_taxi, 0.0) + costo
             self.ganancia_total_diaria += costo
+            
+            # Actualizar cliente mejorado (frecuencia y estrellas)
+            cliente_mejorado = self._obtener_cliente_mejorado(solicitud.id_cliente)
+            cliente_mejorado.incrementar_frecuencia()
+            cliente_mejorado.actualizar_calificacion(calificacion)
+            
+            # Registrar en el sistema de asignación
+            self.sistema_asignacion.registrar_viaje_completado(
+                conductor=taxi,
+                cliente=cliente_mejorado,
+                km=km,
+                tarifa=costo
+            )
 
             # Registro en servicios_control (todas las solicitudes)
             self._registrar_servicio_control(
