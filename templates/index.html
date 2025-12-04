@@ -1,36 +1,57 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="hero">
-    <div class="hero-copy">
-      <h1>Pide tu viaje en segundos</h1>
-      <p>
-        Esta es una simulación académica del sistema de taxis con hilos,
-        semáforos y sincronización, inspirada en apps tipo Uber.
+  <div class="home-container">
+    <div class="home-hero">
+      <h1 class="home-title">¿A dónde quieres ir?</h1>
+      <p class="home-subtitle">
+        Solicita un viaje y llegamos en minutos
       </p>
-      <a href="{{ url_for('solicitar_taxi') }}" class="btn-primary big">
-        Pedir un UNIETAXI
+      <a href="{{ url_for('solicitar_taxi') }}" class="btn-primary big home-cta">
+        Solicitar viaje
       </a>
     </div>
-    <div class="hero-card">
-      <div class="mini-map">
-        <div class="mini-map-route"></div>
-        <div class="mini-map-pin pickup">A</div>
-        <div class="mini-map-pin dropoff">B</div>
+    
+    <div class="home-stats">
+      <div class="stat-card">
+        <div class="stat-icon">🚖</div>
+        <div class="stat-content">
+          <div class="stat-value">3</div>
+          <div class="stat-label">Taxis disponibles</div>
+        </div>
       </div>
-      <div class="mini-info">
-        <div>
-          <span class="label">Estado</span>
-          <span class="value">Simulación activa</span>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+          <div class="stat-value">10</div>
+          <div class="stat-label">Clientes activos</div>
         </div>
-        <div>
-          <span class="label">Taxis en sistema</span>
-          <span class="value">{{ 3 }}</span>  {# si quieres, luego lo sacas del sistema #}
-        </div>
-        <div>
-          <span class="label">Ver reportes</span>
-          <a href="{{ url_for('reportes') }}" class="link-inline">Ir a reportes →</a>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+          <div class="stat-value">Activo</div>
+          <div class="stat-label">Sistema en línea</div>
         </div>
       </div>
     </div>
-  </section>
+    
+    <div class="home-actions">
+      <a href="{{ url_for('solicitar_taxi') }}" class="action-card">
+        <div class="action-icon">📍</div>
+        <div class="action-text">
+          <div class="action-title">Solicitar viaje</div>
+          <div class="action-desc">Pide un taxi ahora</div>
+        </div>
+        <div class="action-arrow">→</div>
+      </a>
+      <a href="{{ url_for('reportes') }}" class="action-card">
+        <div class="action-icon">📈</div>
+        <div class="action-text">
+          <div class="action-title">Ver reportes</div>
+          <div class="action-desc">Estadísticas y ganancias</div>
+        </div>
+        <div class="action-arrow">→</div>
+      </a>
+    </div>
+  </div>
 {% endblock %}

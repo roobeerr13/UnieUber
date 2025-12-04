@@ -83,11 +83,11 @@
               <div class="driver-stat-value highlight-green">{{ '%.2f'|format(t.total_generado|default(0.0)) }} €</div>
             </div>
             <div class="driver-stat">
-              <div class="driver-stat-label">Ganancia (80%)</div>
+              <div class="driver-stat-label">Ganancia del conductor (80%)</div>
               <div class="driver-stat-value highlight-yellow">{{ '%.2f'|format(t.ganancia_taxista|default(0.0)) }} €</div>
             </div>
             <div class="driver-stat">
-              <div class="driver-stat-label">Comisión (20%)</div>
+              <div class="driver-stat-label">Comisión plataforma (20%)</div>
               <div class="driver-stat-value">{{ '%.2f'|format(t.importe_mensual|default(0.0)) }} €</div>
             </div>
           </div>

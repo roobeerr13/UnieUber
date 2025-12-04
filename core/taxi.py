@@ -148,4 +148,8 @@ class Taxi(threading.Thread):
         ) / self.numero_viajes
 
     def acumular_ganancia(self, monto: float):
+        """
+        Acumula la ganancia total generada (el monto completo del viaje).
+        El cálculo del 80% para el taxista se hace en los reportes.
+        """
         self.ganancia_acumulada += monto

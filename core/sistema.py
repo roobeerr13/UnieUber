@@ -5,6 +5,7 @@ import hashlib
 from .taxi import Taxi, SolicitudServicio
 from .sistema_asignacion import SistemaAsignacion
 from .cliente_mejorado import ClienteMejorado
+from .clientes_simulados import GestorClientesSimulados
 
 
 class SistemaCentral:
@@ -36,6 +37,11 @@ class SistemaCentral:
         
         # Registro de clientes mejorados (para frecuencia y estrellas)
         self.clientes_mejorados: Dict[str, ClienteMejorado] = {}
+        
+        # Gestor de clientes simulados (9 clientes + tú = 10)
+        self.gestor_clientes_simulados = GestorClientesSimulados(self)
+        self.gestor_clientes_simulados.crear_clientes_simulados(9)
+        self.gestor_clientes_simulados.iniciar_todos()
 
         # Inicializar algunos taxis de prueba
         self._inicializar_taxis_demo()
@@ -159,7 +165,7 @@ class SistemaCentral:
             taxi.tiempo_desde_ultimo_viaje = 0
             taxi.ultima_actualizacion_tiempo = time.time()
 
-            # Ganancia por taxi
+            # Ganancia por taxi (acumulamos el total generado, luego calculamos 80% para el taxista)
             self.ganancia_por_taxi[taxi.id_taxi] = self.ganancia_por_taxi.get(taxi.id_taxi, 0.0) + costo
             self.ganancia_total_diaria += costo
             
