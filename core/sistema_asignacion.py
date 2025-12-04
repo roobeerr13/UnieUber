@@ -3,7 +3,7 @@ Sistema de asignación avanzado con Senafiris, tarifas dinámicas y resumen diar
 """
 import time
 import threading
-from datetime import datetime, time as dt_time
+from datetime import datetime, time as dt_time, timedelta
 from math import sqrt
 
 
@@ -27,6 +27,10 @@ class SistemaAsignacion:
         self.hora_activacion_tarifa_alta = 21  # 21:00 (9 PM)
         self.hora_resumen_diario = 0   # 00:00 (medianoche)
         
+        # Reloj virtual: 30x más rápido (1 min real = 2 seg virtuales)
+        self.virtual_speed = 30
+        self.virtual_start_time = datetime.now()
+        
         # Contadores diarios (se resetean a las 00:00)
         self.viajes_totales_hoy = 0
         self.ganancias_totales_hoy = 0.0
@@ -41,6 +45,13 @@ class SistemaAsignacion:
         self.hilo_monitor = None
         self._stop_monitor = False
         self._iniciar_monitor()
+    
+    def obtener_hora_virtual(self):
+        """Obtiene la hora virtual actual (30x más rápida)."""
+        real_elapsed = (datetime.now() - self.virtual_start_time).total_seconds()
+        virtual_elapsed = real_elapsed * self.virtual_speed
+        virtual_time = self.virtual_start_time + timedelta(seconds=virtual_elapsed)
+        return virtual_time
 
     def _iniciar_monitor(self):
         """Inicia el hilo de monitoreo de hora."""
@@ -48,27 +59,28 @@ class SistemaAsignacion:
         self.hilo_monitor.start()
 
     def _monitor_hora(self):
-        """Monitorea la hora para actualizar tarifas y generar resumen diario."""
+        """Monitorea la hora virtual para actualizar tarifas y generar resumen diario."""
         ultima_hora_procesada = None
         ultima_tarifa_procesada = None
         
         while not self._stop_monitor:
-            ahora = datetime.now()
-            hora_actual = ahora.hour
+            # Usar hora virtual (30x más rápida)
+            hora_virtual = self.obtener_hora_virtual()
+            hora_actual = hora_virtual.hour
             
             # Cambio a tarifa alta a las 21:00
             if hora_actual >= self.hora_activacion_tarifa_alta and ultima_tarifa_procesada != "alta":
                 self.modo_tarifa_alta = True
-                print(f"[SistemaAsignacion] ⏰ Activada tarifa alta a las {hora_actual}:00")
+                print(f"[SistemaAsignacion] ⏰ Activada tarifa alta a las {hora_actual}:00 (hora virtual)")
                 ultima_tarifa_procesada = "alta"
             
-            # Cambio a tarifa normal a las 00:00 (después de resumen)
+            # Cambio a tarifa normal antes de las 21:00
             if hora_actual < self.hora_activacion_tarifa_alta and ultima_tarifa_procesada != "normal":
                 self.modo_tarifa_alta = False
-                print(f"[SistemaAsignacion] ⏰ Activada tarifa normal a las {hora_actual}:00")
+                print(f"[SistemaAsignacion] ⏰ Activada tarifa normal a las {hora_actual}:00 (hora virtual)")
                 ultima_tarifa_procesada = "normal"
             
-            # Generar resumen diario a las 00:00
+            # Generar resumen diario a las 00:00 (virtual)
             if hora_actual == self.hora_resumen_diario and ultima_hora_procesada != hora_actual:
                 sistema_central = getattr(self, '_sistema_central', None)
                 self.generar_resumen_diario(sistema_central)
@@ -78,7 +90,7 @@ class SistemaAsignacion:
             if hora_actual == 1:
                 ultima_hora_procesada = None
             
-            time.sleep(60)  # Revisar cada minuto
+            time.sleep(2)  # Revisar cada 2 segundos reales (equivale a 1 minuto virtual)
 
     def detener_monitor(self):
         """Detiene el hilo de monitoreo."""

@@ -176,12 +176,19 @@ def reportes():
     # Agregar información del sistema de asignación
     resumenes_diarios = sistema.sistema_asignacion.resumen_diarios
     modo_tarifa_alta = sistema.sistema_asignacion.modo_tarifa_alta
+    # Calcular hora virtual para mostrar en reportes
+    from datetime import datetime, timedelta
+    start_time = datetime.now()
+    virtual_speed = 30
+    virtual_elapsed = (datetime.now() - start_time).total_seconds() * virtual_speed
+    virtual_time = start_time + timedelta(seconds=virtual_elapsed)
     return render_template(
         "reportes.html", 
         diarios=diarios, 
         mensuales=mensuales,
         resumenes_diarios=resumenes_diarios,
-        modo_tarifa_alta=modo_tarifa_alta
+        modo_tarifa_alta=modo_tarifa_alta,
+        hora_virtual=virtual_time.strftime("%H:%M:%S")
     )
 
 

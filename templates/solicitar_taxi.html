@@ -111,24 +111,42 @@
         {% endif %}
         
         {% if taxi_info %}
-          <div style="background: rgba(0, 196, 106, 0.1); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(0, 196, 106, 0.3);">
-            <div style="font-weight: 600; margin-bottom: 6px; color: #00c46a;">🚖 Taxi Asignado</div>
-            <div style="font-size: 13px;">
-              <div><strong>{{ taxi_info.nombre }}</strong> (Placa: {{ taxi_info.placa }})</div>
-              <div style="color: #aaa; margin-top: 4px;">
-                ⭐ Calificación: {{ taxi_info.calificacion }} · Viajes hoy: {{ taxi_info.viajes_hoy }}
+          <div class="taxi-assigned-card">
+            <div class="taxi-assigned-header">
+              <div class="taxi-icon-large">🚖</div>
+              <div class="taxi-assigned-info">
+                <div class="taxi-assigned-title">Tu conductor</div>
+                <div class="taxi-assigned-name">{{ taxi_info.nombre }}</div>
+                <div class="taxi-assigned-placa">Placa: {{ taxi_info.placa }}</div>
+              </div>
+            </div>
+            <div class="taxi-assigned-details">
+              <div class="taxi-detail-item">
+                <span class="taxi-detail-label">⭐ Calificación</span>
+                <span class="taxi-detail-value">{{ taxi_info.calificacion }}/5.0</span>
+              </div>
+              <div class="taxi-detail-item">
+                <span class="taxi-detail-label">📊 Viajes hoy</span>
+                <span class="taxi-detail-value">{{ taxi_info.viajes_hoy }}</span>
               </div>
             </div>
           </div>
         {% endif %}
         
         {% if cliente_info %}
-          <div style="background: rgba(255, 183, 3, 0.1); padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255, 183, 3, 0.3);">
-            <div style="font-weight: 600; margin-bottom: 6px; color: #ffb703;">👤 Tu Perfil</div>
-            <div style="font-size: 13px;">
-              <div>Frecuencia: <strong>{{ cliente_info.frecuencia }}</strong> viajes</div>
-              <div style="color: #aaa; margin-top: 4px;">
-                Estrellas: {% for i in range(cliente_info.estrellas) %}⭐{% endfor %}
+          <div class="cliente-profile-card">
+            <div class="cliente-profile-header">
+              <span class="cliente-profile-icon">👤</span>
+              <span class="cliente-profile-title">Tu Perfil</span>
+            </div>
+            <div class="cliente-profile-stats">
+              <div class="cliente-stat">
+                <span class="cliente-stat-label">Viajes realizados</span>
+                <span class="cliente-stat-value">{{ cliente_info.frecuencia }}</span>
+              </div>
+              <div class="cliente-stat">
+                <span class="cliente-stat-label">Nivel</span>
+                <span class="cliente-stat-stars">{% for i in range(cliente_info.estrellas) %}⭐{% endfor %}</span>
               </div>
             </div>
           </div>

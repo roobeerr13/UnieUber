@@ -1,55 +1,104 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>Reportes del sistema</h2>
+  <div class="reports-header">
+    <h2>📊 Reportes del Sistema</h2>
+    <div class="reports-summary">
+      <div class="summary-card">
+        <div class="summary-label">Ganancia Total</div>
+        <div class="summary-value">{{ '%.2f'|format(diarios.ganancia_total|default(0.0)) }} €</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Día Actual</div>
+        <div class="summary-value">{{ diarios.dia }}</div>
+      </div>
+    </div>
+  </div>
 
   <section class="reports-grid">
     <div class="card">
-      <h3>Parte I – Reporte diario</h3>
-      <p>Día: <strong>{{ diarios.dia }}</strong></p>
-      <p>Ganancia total: <strong>{{ diarios.ganancia_total }} €</strong></p>
+      <h3 class="card-title">📋 Reporte Diario</h3>
+      <div class="daily-stats">
+        <div class="stat-box">
+          <div class="stat-label">Ganancia Total</div>
+          <div class="stat-value highlight-green">{{ '%.2f'|format(diarios.ganancia_total|default(0.0)) }} €</div>
+        </div>
+      </div>
 
-      <h4>Servicios seguidos (hasta 5)</h4>
-      <ul class="list">
+      <h4 class="section-subtitle">🚕 Servicios Recientes (últimos 5)</h4>
+      <div class="services-list">
       {% for s in diarios.servicios_seguimiento %}
-        <li>
-          <div class="list-title">
-            Taxi {{ s.id_taxi }} → Cliente {{ s.id_cliente }}
+        <div class="service-card">
+          <div class="service-header">
+            <span class="service-icon">🚖</span>
+            <div class="service-title">
+              <strong>Taxi {{ s.id_taxi }}</strong> → Cliente {{ s.id_cliente }}
+            </div>
           </div>
-          <div class="list-body">
-            Origen:
-            {{ s.direccion_origen or s.origen }}<br>
-            Destino:
-            {{ s.direccion_destino or s.destino }}<br>
-            Km: {{ '%.2f'|format(s.km) }} • Costo: {{ '%.2f'|format(s.costo|default(0.0)) }} € • Calificación: {{ s.calificacion }}
+          <div class="service-details">
+            <div class="service-detail-row">
+              <span class="service-detail-label">📍 Origen:</span>
+              <span class="service-detail-value">{{ s.direccion_origen or s.origen }}</span>
+            </div>
+            <div class="service-detail-row">
+              <span class="service-detail-label">🎯 Destino:</span>
+              <span class="service-detail-value">{{ s.direccion_destino or s.destino }}</span>
+            </div>
+            <div class="service-metrics">
+              <div class="service-metric">
+                <span class="metric-label">Distancia</span>
+                <span class="metric-value">{{ '%.2f'|format(s.km) }} km</span>
+              </div>
+              <div class="service-metric">
+                <span class="metric-label">Costo</span>
+                <span class="metric-value highlight-green">{{ '%.2f'|format(s.costo|default(0.0)) }} €</span>
+              </div>
+              <div class="service-metric">
+                <span class="metric-label">⭐ Calificación</span>
+                <span class="metric-value">{{ s.calificacion }}/5</span>
+              </div>
+            </div>
           </div>
-        </li>
+        </div>
       {% else %}
-        <li>No hay servicios aún.</li>
+        <div class="empty-state">No hay servicios aún.</div>
       {% endfor %}
-      </ul>
+      </div>
     </div>
 
     <div class="card">
-      <h3>Parte II – Resumen por taxista</h3>
-      <ul class="list">
+      <h3 class="card-title">👥 Resumen por Conductor</h3>
+      <div class="drivers-list">
       {% for t in mensuales %}
-        <li>
-          <div class="list-title">
-            Taxi {{ t.id_taxi }} – {{ t.nombre }} ({{ t.placa }})
+        <div class="driver-card">
+          <div class="driver-header">
+            <div class="driver-avatar">🚕</div>
+            <div class="driver-info">
+              <div class="driver-name">{{ t.nombre }}</div>
+              <div class="driver-placa">Placa: {{ t.placa }}</div>
+            </div>
           </div>
-          <div class="list-body">
-            Total generado: <strong style="color: #00c46a;">{{ '%.2f'|format(t.total_generado|default(0.0)) }} €</strong><br>
-            Importe mensual (20%): <strong>{{ '%.2f'|format(t.importe_mensual|default(0.0)) }} €</strong><br>
-            Ganancia taxista (80%): <strong style="color: #ffb703;">{{ '%.2f'|format(t.ganancia_taxista|default(0.0)) }} €</strong>
+          <div class="driver-stats">
+            <div class="driver-stat">
+              <div class="driver-stat-label">Total Generado</div>
+              <div class="driver-stat-value highlight-green">{{ '%.2f'|format(t.total_generado|default(0.0)) }} €</div>
+            </div>
+            <div class="driver-stat">
+              <div class="driver-stat-label">Ganancia (80%)</div>
+              <div class="driver-stat-value highlight-yellow">{{ '%.2f'|format(t.ganancia_taxista|default(0.0)) }} €</div>
+            </div>
+            <div class="driver-stat">
+              <div class="driver-stat-label">Comisión (20%)</div>
+              <div class="driver-stat-value">{{ '%.2f'|format(t.importe_mensual|default(0.0)) }} €</div>
+            </div>
           </div>
-        </li>
+        </div>
       {% else %}
-        <li>No hay datos de taxis todavía.</li>
+        <div class="empty-state">No hay datos de taxis todavía.</div>
       {% endfor %}
-      </ul>
+      </div>
       {% if mensuales|length > 0 %}
-      <div style="margin-top:2em;">
-        <canvas id="taxiBarChart" height="180"></canvas>
+      <div class="chart-container">
+        <canvas id="taxiBarChart"></canvas>
       </div>
       <!-- Datos serializados en JSON para evitar errores de sintaxis JS/Jinja -->
       <script id="mensualesData" type="application/json">{{ mensuales|tojson }}</script>
@@ -67,15 +116,43 @@
               datasets: [{
                 label: 'Ganancia taxista (€)',
                 data: taxiGanancias,
-                backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
+                backgroundColor: '#00D4AA',
+                borderColor: '#00D4AA',
+                borderWidth: 2,
+                borderRadius: 8
               }]
             },
             options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: false
+                }
+              },
               scales: {
                 y: {
-                  beginAtZero: true
+                  beginAtZero: true,
+                  ticks: {
+                    color: '#888',
+                    font: {
+                      size: 12
+                    }
+                  },
+                  grid: {
+                    color: '#2a2a2a'
+                  }
+                },
+                x: {
+                  ticks: {
+                    color: '#888',
+                    font: {
+                      size: 12
+                    }
+                  },
+                  grid: {
+                    color: '#2a2a2a'
+                  }
                 }
               }
             }
@@ -89,23 +166,40 @@
     
     {% if resumenes_diarios %}
     <div class="card">
-      <h3>Resúmenes Diarios Históricos</h3>
-      <ul class="list">
+      <h3 class="card-title">📅 Resúmenes Diarios Históricos</h3>
+      <div class="daily-summaries">
       {% for resumen in resumenes_diarios %}
-        <li>
-          <div class="list-title">
-            📊 {{ resumen.fecha }}
+        <div class="daily-summary-card">
+          <div class="daily-summary-header">
+            <span class="daily-summary-date">📊 {{ resumen.fecha }}</span>
           </div>
-          <div class="list-body">
-            Viajes totales: <strong>{{ resumen.viajes_totales }}</strong><br>
-            Ganancias totales: <strong style="color: #00c46a;">{{ '%.2f'|format(resumen.ganancias_totales) }} €</strong><br>
-            Ganancias tarifa alta: <strong style="color: #ffb703;">{{ '%.2f'|format(resumen.ganancias_tarifa_alta) }} €</strong><br>
-            Conductor más activo: {{ resumen.conductor_mas_viajes }}<br>
-            Cliente más frecuente: {{ resumen.cliente_mas_frecuente }}
+          <div class="daily-summary-stats">
+            <div class="daily-stat">
+              <span class="daily-stat-label">Viajes</span>
+              <span class="daily-stat-value">{{ resumen.viajes_totales }}</span>
+            </div>
+            <div class="daily-stat">
+              <span class="daily-stat-label">Ganancias</span>
+              <span class="daily-stat-value highlight-green">{{ '%.2f'|format(resumen.ganancias_totales) }} €</span>
+            </div>
+            <div class="daily-stat">
+              <span class="daily-stat-label">Tarifa Alta</span>
+              <span class="daily-stat-value highlight-yellow">{{ '%.2f'|format(resumen.ganancias_tarifa_alta) }} €</span>
+            </div>
           </div>
-        </li>
+          <div class="daily-summary-highlights">
+            <div class="highlight-item">
+              <span class="highlight-icon">👑</span>
+              <span class="highlight-text">{{ resumen.conductor_mas_viajes }}</span>
+            </div>
+            <div class="highlight-item">
+              <span class="highlight-icon">⭐</span>
+              <span class="highlight-text">{{ resumen.cliente_mas_frecuente }}</span>
+            </div>
+          </div>
+        </div>
       {% endfor %}
-      </ul>
+      </div>
     </div>
     {% endif %}
   </section>

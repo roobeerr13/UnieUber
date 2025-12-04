@@ -17,11 +17,13 @@
       </div>
     </div>
     <div class="clock-container" id="clockContainer">
+      <div class="clock-label">Reloj Virtual</div>
       <div class="clock-time" id="clockTime">--:--:--</div>
       <div class="clock-status" id="clockStatus">
         <span class="status-indicator" id="statusIndicator"></span>
         <span id="tarifaStatus">Tarifa Normal</span>
       </div>
+      <div class="clock-speed">⏱️ 30x velocidad</div>
     </div>
     <nav class="nav-links">
       <a href="{{ url_for('index') }}">Inicio</a>
@@ -30,15 +32,27 @@
     </nav>
   </header>
   <script>
+    // Reloj virtual: 1 minuto real = 2 segundos virtuales (30x más rápido)
+    // Hora de inicio: hora actual del sistema
+    const startTime = new Date();
+    const virtualSpeed = 30; // 30x más rápido
+    
     function updateClock() {
       const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const realElapsed = (now - startTime) / 1000; // segundos reales transcurridos
+      const virtualElapsed = realElapsed * virtualSpeed; // segundos virtuales
+      
+      // Calcular hora virtual
+      const virtualTotalSeconds = Math.floor(startTime.getTime() / 1000) + virtualElapsed;
+      const virtualDate = new Date(virtualTotalSeconds * 1000);
+      
+      const hours = String(virtualDate.getHours()).padStart(2, '0');
+      const minutes = String(virtualDate.getMinutes()).padStart(2, '0');
+      const seconds = String(virtualDate.getSeconds()).padStart(2, '0');
       document.getElementById('clockTime').textContent = `${hours}:${minutes}:${seconds}`;
       
       // Determinar estado de tarifa (alta después de las 21:00)
-      const hora = now.getHours();
+      const hora = virtualDate.getHours();
       const isTarifaAlta = hora >= 21 || hora < 6;
       const statusIndicator = document.getElementById('statusIndicator');
       const tarifaStatus = document.getElementById('tarifaStatus');
@@ -52,7 +66,7 @@
       }
     }
     updateClock();
-    setInterval(updateClock, 1000);
+    setInterval(updateClock, 100); // Actualizar cada 100ms para suavidad
   </script>
 
   <div class="page-wrapper">
