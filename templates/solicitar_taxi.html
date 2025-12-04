@@ -62,6 +62,8 @@
               </div>
               <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
               <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+              <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+              <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
               <script>
                 const origLat = parseFloat("{{ orig_lat|default('0') }}");
                 const origLon = parseFloat("{{ orig_lon|default('0') }}");
@@ -69,7 +71,11 @@
                 const destLon = parseFloat("{{ dest_lon|default('0') }}");
                 
                 // Crear mapa
-                const map = L.map('map').setView([(origLat + destLat)/2, (origLon + destLon)/2], 12);
+                const map = L.map('map', {
+                  zoomControl: true,
+                  attributionControl: true
+                }).setView([(origLat + destLat)/2, (origLon + destLon)/2], 12);
+                
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                   maxZoom: 19,
                   attribution: '© OpenStreetMap'
@@ -98,42 +104,147 @@
                 });
                 
                 // Marcadores
-                const originMarker = L.marker([origLat, origLon], {icon: originIcon}).addTo(map);
+                const originMarker = L.marker([origLat, origLon], {icon: originIcon, zIndexOffset: 1000}).addTo(map);
                 originMarker.bindPopup("<b>📍 Origen</b><br>" + "{{ direccion_origen|e }}").openPopup();
                 
-                const destMarker = L.marker([destLat, destLon], {icon: destIcon}).addTo(map);
+                const destMarker = L.marker([destLat, destLon], {icon: destIcon, zIndexOffset: 1000}).addTo(map);
                 destMarker.bindPopup("<b>🎯 Destino</b><br>" + "{{ direccion_destino|e }}");
                 
-                // Ruta
-                const route = L.polyline([[origLat, origLon], [destLat, destLon]], {
-                  color: '#00D4AA',
-                  weight: 4,
-                  opacity: 0.7
-                }).addTo(map);
+                // Obtener ruta real por calles usando OSRM
+                let routeCoordinates = [];
+                let routePolyline = null;
+                let taxiMarker = null;
                 
-                // Animación del taxi (solo una vez)
-                let taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon}).addTo(map);
-                let steps = 50;
-                let currentStep = 0;
-                let animationComplete = false;
+                // Usar OSRM para obtener ruta por calles
+                const routingUrl = `https://router.project-osrm.org/route/v1/driving/${origLon},${origLat};${destLon},${destLat}?overview=full&geometries=geojson`;
                 
-                function animateTaxi() {
-                  if (animationComplete) return;
+                fetch(routingUrl)
+                  .then(response => response.json())
+                  .then(data => {
+                    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                      // Obtener coordenadas de la ruta
+                      routeCoordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                      
+                      // Dibujar ruta en el mapa
+                      routePolyline = L.polyline(routeCoordinates, {
+                        color: '#00D4AA',
+                        weight: 5,
+                        opacity: 0.8,
+                        smoothFactor: 1
+                      }).addTo(map);
+                      
+                      // Ajustar vista al mapa
+                      map.fitBounds(routePolyline.getBounds(), {padding: [50, 50]});
+                      
+                      // Crear marcador del taxi
+                      taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon, zIndexOffset: 2000}).addTo(map);
+                      
+                      // Animar taxi siguiendo la ruta
+                      animateTaxiAlongRoute();
+                    } else {
+                      // Si falla OSRM, usar ruta recta como fallback
+                      console.warn('OSRM no disponible, usando ruta recta');
+                      routeCoordinates = [[origLat, origLon], [destLat, destLon]];
+                      routePolyline = L.polyline(routeCoordinates, {
+                        color: '#00D4AA',
+                        weight: 5,
+                        opacity: 0.8
+                      }).addTo(map);
+                      
+                      taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon, zIndexOffset: 2000}).addTo(map);
+                      animateTaxiStraight();
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error obteniendo ruta:', error);
+                    // Fallback a ruta recta
+                    routeCoordinates = [[origLat, origLon], [destLat, destLon]];
+                    routePolyline = L.polyline(routeCoordinates, {
+                      color: '#00D4AA',
+                      weight: 5,
+                      opacity: 0.8
+                    }).addTo(map);
+                    
+                    taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon, zIndexOffset: 2000}).addTo(map);
+                    animateTaxiStraight();
+                  });
+                
+                // Animar taxi siguiendo la ruta real
+                function animateTaxiAlongRoute() {
+                  if (!taxiMarker || routeCoordinates.length === 0) return;
                   
-                  if (currentStep <= steps) {
-                    const progress = currentStep / steps;
-                    const lat = origLat + (destLat - origLat) * progress;
-                    const lon = origLon + (destLon - origLon) * progress;
-                    taxiMarker.setLatLng([lat, lon]);
-                    currentStep++;
-                    setTimeout(animateTaxi, 100);
-                  } else {
-                    // Llegó al destino, mantenerlo ahí
-                    taxiMarker.setLatLng([destLat, destLon]);
-                    animationComplete = true;
+                  let currentIndex = 0;
+                  let animationComplete = false;
+                  
+                  function moveTaxi() {
+                    if (animationComplete) return;
+                    
+                    if (currentIndex < routeCoordinates.length - 1) {
+                      const current = routeCoordinates[currentIndex];
+                      const next = routeCoordinates[currentIndex + 1];
+                      
+                      // Calcular distancia entre puntos
+                      const latDiff = next[0] - current[0];
+                      const lonDiff = next[1] - current[1];
+                      const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+                      
+                      // Mover en pasos pequeños
+                      const steps = Math.max(5, Math.ceil(distance * 1000));
+                      let step = 0;
+                      
+                      function moveStep() {
+                        if (step < steps) {
+                          const progress = step / steps;
+                          const lat = current[0] + latDiff * progress;
+                          const lon = current[1] + lonDiff * progress;
+                          taxiMarker.setLatLng([lat, lon]);
+                          step++;
+                          setTimeout(moveStep, 50);
+                        } else {
+                          currentIndex++;
+                          if (currentIndex < routeCoordinates.length - 1) {
+                            setTimeout(moveTaxi, 10);
+                          } else {
+                            // Llegó al destino
+                            taxiMarker.setLatLng(routeCoordinates[routeCoordinates.length - 1]);
+                            animationComplete = true;
+                          }
+                        }
+                      }
+                      moveStep();
+                    } else {
+                      animationComplete = true;
+                    }
                   }
+                  
+                  moveTaxi();
                 }
-                animateTaxi();
+                
+                // Fallback: animación en línea recta
+                function animateTaxiStraight() {
+                  if (!taxiMarker) return;
+                  
+                  let steps = 100;
+                  let currentStep = 0;
+                  let animationComplete = false;
+                  
+                  function animate() {
+                    if (animationComplete) return;
+                    
+                    if (currentStep <= steps) {
+                      const progress = currentStep / steps;
+                      const lat = origLat + (destLat - origLat) * progress;
+                      const lon = origLon + (destLon - origLon) * progress;
+                      taxiMarker.setLatLng([lat, lon]);
+                      currentStep++;
+                      setTimeout(animate, 80);
+                    } else {
+                      taxiMarker.setLatLng([destLat, destLon]);
+                      animationComplete = true;
+                    }
+                  }
+                  animate();
+                }
               </script>
             {% else %}
               <div class="map-placeholder">
