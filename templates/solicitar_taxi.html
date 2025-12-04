@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="uber-container">
-    <div class="card">
-      <h2>Solicita tu viaje</h2>
-      <p class="card-subtitle">
-        Introduce tu punto de recogida y destino. Por dentro usamos hilos y semáforos,
-        pero por fuera parece una app normal 😌
-      </p>
-      <form method="post" class="uber-form">
+  <div class="ride-request-container">
+    <div class="ride-form-section">
+      <div class="card">
+        <div class="form-header">
+          <h2>🚖 Solicita tu viaje</h2>
+          <p class="card-subtitle">
+            Completa los datos para solicitar un taxi
+          </p>
+        </div>
+        <form method="post" class="uber-form" id="rideForm">
         <label>
           ID Cliente
           <input type="text" name="cliente_id" value="cliente-web">
@@ -41,74 +43,132 @@
           <input type="text" name="ciudad_destino" placeholder="Madrid">
         </label>
 
-        <button type="submit" class="btn-primary">Confirmar viaje</button>
-      </form>
+          <button type="submit" class="btn-primary btn-large">🚖 Solicitar Taxi</button>
+        </form>
+      </div>
     </div>
 
-    <div class="map-fake">
-      <div class="map-header">
-        <span class="dot live"></span> Vista simulada del mapa
-      </div>
-      <div class="map-body">
-        {% if direccion_origen and direccion_destino and orig_lat is not none and orig_lon is not none and dest_lat is not none and dest_lon is not none %}
-          <div class="map-inner">
-            <div id="map" style="height: 400px;"></div>
-            <div class="map-badge">
-              <span>Viaje en curso</span>
-              <small>Simulación sobre mapa real</small>
-            </div>
+    <div class="ride-info-section">
+      {% if direccion_origen and direccion_destino %}
+        <div class="card map-card">
+          <div class="map-header">
+            <span class="dot live"></span> 
+            <span>Ruta del viaje</span>
           </div>
-          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-          <script>
-            const origLat = parseFloat("{{ orig_lat|default('0') }}");
-            const origLon = parseFloat("{{ orig_lon|default('0') }}");
-            const destLat = parseFloat("{{ dest_lat|default('0') }}");
-            const destLon = parseFloat("{{ dest_lon|default('0') }}");
-            const taxiIcon = L.icon({
-              iconUrl: "https://emojiapi.dev/api/v1/taxi/64.png",
-              iconSize: [32, 32],
-              iconAnchor: [16, 16]
-            });
-            const map = L.map('map').setView([(origLat + destLat)/2, (origLon + destLon)/2], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              maxZoom: 19,
-              attribution: '© OpenStreetMap'
-            }).addTo(map);
-            // Marcadores origen/destino
-            L.marker([origLat, origLon], {title: "Origen"}).addTo(map).bindPopup("Origen").openPopup();
-            L.marker([destLat, destLon], {title: "Destino"}).addTo(map).bindPopup("Destino");
-            // Línea entre puntos
-            const route = L.polyline([[origLat, origLon], [destLat, destLon]], {color: 'blue'}).addTo(map);
-            // Taxi emoji animado
-            let taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon}).addTo(map);
-            let steps = 100;
-            let i = 0;
-            function animateTaxi() {
-              i++;
-              if (i > steps) return;
-              let lat = origLat + (destLat - origLat) * (i/steps);
-              let lon = origLon + (destLon - origLon) * (i/steps);
-              taxiMarker.setLatLng([lat, lon]);
-              setTimeout(animateTaxi, 30);
-            }
-            animateTaxi();
-          </script>
-        {% else %}
-          <div class="map-placeholder">
-            Introduce origen y destino y verás aquí el mapa real con el taxi moviéndose.
-          </div>
-        {% endif %}
-      </div>
-      <div class="map-footer">
-        {% if dist_km is not none and precio is not none %}
-          <div style="margin-top:1em; font-size:1.2em; margin-bottom: 12px;">
-            🚕 Distancia aprox: <b>{{ '%.2f'|format(dist_km) }} km</b> · Precio estimado: <b>{{ '%.2f'|format(precio) }} €</b>
-            {% if modo_tarifa_alta %}
-              <span style="color: #ffb703; font-size: 0.9em;">🌙 Tarifa Alta</span>
+          <div class="map-body">
+            {% if orig_lat is not none and orig_lon is not none and dest_lat is not none and dest_lon is not none %}
+              <div class="map-inner">
+                <div id="map"></div>
+              </div>
+              <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+              <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+              <script>
+                const origLat = parseFloat("{{ orig_lat|default('0') }}");
+                const origLon = parseFloat("{{ orig_lon|default('0') }}");
+                const destLat = parseFloat("{{ dest_lat|default('0') }}");
+                const destLon = parseFloat("{{ dest_lon|default('0') }}");
+                
+                // Crear mapa
+                const map = L.map('map').setView([(origLat + destLat)/2, (origLon + destLon)/2], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  maxZoom: 19,
+                  attribution: '© OpenStreetMap'
+                }).addTo(map);
+                
+                // Iconos personalizados
+                const originIcon = L.divIcon({
+                  className: 'custom-marker origin-marker',
+                  html: '<div class="marker-pin origin">📍</div>',
+                  iconSize: [30, 30],
+                  iconAnchor: [15, 30]
+                });
+                
+                const destIcon = L.divIcon({
+                  className: 'custom-marker dest-marker',
+                  html: '<div class="marker-pin dest">🎯</div>',
+                  iconSize: [30, 30],
+                  iconAnchor: [15, 30]
+                });
+                
+                const taxiIcon = L.divIcon({
+                  className: 'custom-marker taxi-marker',
+                  html: '<div class="marker-pin taxi">🚖</div>',
+                  iconSize: [40, 40],
+                  iconAnchor: [20, 40]
+                });
+                
+                // Marcadores
+                const originMarker = L.marker([origLat, origLon], {icon: originIcon}).addTo(map);
+                originMarker.bindPopup("<b>📍 Origen</b><br>" + "{{ direccion_origen|e }}").openPopup();
+                
+                const destMarker = L.marker([destLat, destLon], {icon: destIcon}).addTo(map);
+                destMarker.bindPopup("<b>🎯 Destino</b><br>" + "{{ direccion_destino|e }}");
+                
+                // Ruta
+                const route = L.polyline([[origLat, origLon], [destLat, destLon]], {
+                  color: '#00D4AA',
+                  weight: 4,
+                  opacity: 0.7
+                }).addTo(map);
+                
+                // Animación del taxi
+                let taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon}).addTo(map);
+                let steps = 50;
+                let currentStep = 0;
+                
+                function animateTaxi() {
+                  if (currentStep > steps) {
+                    currentStep = 0; // Reiniciar animación
+                  }
+                  const progress = currentStep / steps;
+                  const lat = origLat + (destLat - origLat) * progress;
+                  const lon = origLon + (destLon - origLon) * progress;
+                  taxiMarker.setLatLng([lat, lon]);
+                  currentStep++;
+                  setTimeout(animateTaxi, 100);
+                }
+                animateTaxi();
+              </script>
+            {% else %}
+              <div class="map-placeholder">
+                <div class="placeholder-icon">🗺️</div>
+                <p>Calculando ruta...</p>
+              </div>
             {% endif %}
           </div>
-        {% endif %}
+        </div>
+      {% else %}
+        <div class="card map-card">
+          <div class="map-placeholder">
+            <div class="placeholder-icon">📍</div>
+            <p>Completa el formulario para ver la ruta</p>
+          </div>
+        </div>
+      {% endif %}
+      
+      {% if dist_km is not none and precio is not none %}
+        <div class="card ride-summary-card">
+          <div class="ride-summary-header">
+            <h3>📊 Resumen del viaje</h3>
+          </div>
+          <div class="ride-summary-content">
+            <div class="summary-item">
+              <span class="summary-label">Distancia</span>
+              <span class="summary-value">{{ '%.2f'|format(dist_km) }} km</span>
+            </div>
+            <div class="summary-item highlight">
+              <span class="summary-label">Precio estimado</span>
+              <span class="summary-value price">{{ '%.2f'|format(precio) }} €</span>
+            </div>
+            {% if modo_tarifa_alta %}
+            <div class="summary-item">
+              <span class="summary-label">Tarifa</span>
+              <span class="summary-value tarifa-alta">🌙 Alta</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
         
         {% if taxi_info %}
           <div class="taxi-assigned-card">
@@ -152,15 +212,6 @@
           </div>
         {% endif %}
         
-        <div>
-          <span class="label">Tipo de viaje</span>
-          <span class="value">Simulación académica</span>
-        </div>
-        <div>
-          <span class="label">Estado</span>
-          <span class="value">{% if taxi_info %}Taxi asignado{% else %}En espera de solicitud{% endif %}</span>
-        </div>
-      </div>
     </div>
   </div>
 {% endblock %}

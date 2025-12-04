@@ -285,12 +285,48 @@ body {
   margin-bottom: 14px;
 }
 
-/* Layout pedir taxi */
-.uber-container {
-  display: flex;
-  flex-wrap: wrap;
+/* Layout pedir taxi - nuevo diseño */
+.ride-request-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: flex-start;
+  align-items: start;
+}
+
+.ride-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ride-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .ride-request-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-header {
+  margin-bottom: 20px;
+}
+
+.form-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.btn-large {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  margin-top: 20px;
 }
 
 .uber-form label {
@@ -791,18 +827,97 @@ body {
 
 .map-placeholder {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 13px;
-  color: #aaa;
-  padding: 12px;
+  min-height: 500px;
+  font-size: 14px;
+  color: #888;
+  padding: 40px;
   text-align: center;
+  background: #0f0f0f;
 }
+
+.placeholder-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.map-placeholder p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* Resumen del viaje */
+.ride-summary-card {
+  margin-top: 16px;
+}
+
+.ride-summary-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #2a2a2a;
+}
+
+.ride-summary-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ride-summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #0f0f0f;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+}
+
+.summary-item.highlight {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border-color: #00D4AA;
+}
+
+.summary-label {
+  font-size: 14px;
+  color: #888;
+  font-weight: 600;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.summary-value.price {
+  font-size: 24px;
+  color: #00D4AA;
+}
+
+.summary-value.tarifa-alta {
+  color: #FFB800;
+}
+.map-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .map-body {
   position: relative;
   flex: 1;
-  min-height: 260px;
+  min-height: 500px;
   border-radius: 14px;
   overflow: hidden;
   background: #111;
@@ -811,6 +926,41 @@ body {
 #map {
   width: 100%;
   height: 100%;
+  min-height: 500px;
+}
+
+/* Marcadores personalizados */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+.marker-pin {
+  font-size: 24px;
+  text-align: center;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.marker-pin.origin {
+  color: #00D4AA;
+}
+
+.marker-pin.dest {
+  color: #FFB800;
+}
+
+.marker-pin.taxi {
+  font-size: 32px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .taxi-icon {

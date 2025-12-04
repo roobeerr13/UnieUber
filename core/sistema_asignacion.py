@@ -164,13 +164,12 @@ class SistemaAsignacion:
 
     def seleccionar_conductor_para_cliente(self, cliente, lista_conductores):
         """
-        Selecciona el mejor conductor para un cliente.
+        Selecciona el mejor conductor para un cliente usando un score combinado.
         
         Proceso:
         1. Filtra conductores disponibles.
-        2. Calcula distancia a cada uno.
-        3. Selecciona el más cercano.
-        4. Si hay empate de distancia, usa Senafiris.
+        2. Calcula score combinado: distancia + carga + Senafiris
+        3. Selecciona el conductor con mejor score.
         
         Args:
             cliente: objeto ClienteMejorado
@@ -183,7 +182,7 @@ class SistemaAsignacion:
                 - tarifa_base: tarifa base aplicada
                 - tarifa_km: tarifa por km aplicada
                 - cliente_estrellas: estrellas del cliente
-                - motivo: 'distancia' o 'senafiris'
+                - motivo: 'distancia', 'senafiris' o 'balanceado'
         """
         if not lista_conductores:
             return None
@@ -193,29 +192,46 @@ class SistemaAsignacion:
         if not conductores_disponibles:
             return None
         
-        # Calcular distancias
+        # Calcular score combinado para cada conductor
+        scores = {}
         distancias = {}
         for conductor in conductores_disponibles:
             pos_conductor = getattr(conductor, 'posicion', (0, 0))
             pos_cliente = getattr(cliente, 'posicion', (0, 0))
-            # Calcular distancia desde el conductor hasta el origen del cliente
+            
+            # Distancia (normalizada, menor es mejor)
             dist = self.calcular_distancia(pos_conductor, pos_cliente)
             distancias[conductor] = dist
+            dist_score = dist  # Distancia directa (menor es mejor)
+            
+            # Puntuación Senafiris (mayor es mejor)
+            senafiris_score = self.calcular_puntuacion_senafiris(conductor)
+            
+            # Penalización por carga (más viajes = peor)
+            carga_penalty = conductor.viajes_hoy * 0.5
+            
+            # Score combinado: distancia + penalización carga - bonus Senafiris
+            # Normalizamos Senafiris para que tenga menos peso que la distancia
+            score_final = dist_score + carga_penalty - (senafiris_score / 50)
+            
+            scores[conductor] = score_final
         
-        # Encontrar distancia mínima
-        distancia_minima = min(distancias.values())
-        candidatos = [c for c, d in distancias.items() if d == distancia_minima]
+        # Seleccionar el conductor con menor score (mejor)
+        conductor_seleccionado = min(conductores_disponibles, key=lambda c: scores[c])
+        distancia_minima = distancias[conductor_seleccionado]
         
-        # Si hay múltiples candidatos, usar Senafiris
-        if len(candidatos) > 1:
-            puntuaciones_senafiris = {
-                c: self.calcular_puntuacion_senafiris(c) for c in candidatos
-            }
-            conductor_seleccionado = max(candidatos, key=lambda c: puntuaciones_senafiris[c])
-            motivo = "senafiris"
+        # Determinar motivo
+        if conductor_seleccionado.viajes_hoy == min(c.viajes_hoy for c in conductores_disponibles):
+            motivo = "balanceado"
+        elif scores[conductor_seleccionado] == min(scores.values()):
+            # Si el score es muy cercano a otros, fue por Senafiris
+            otros_scores = [s for c, s in scores.items() if c != conductor_seleccionado]
+            if otros_scores and abs(scores[conductor_seleccionado] - min(otros_scores)) < 0.1:
+                motivo = "senafiris"
+            else:
+                motivo = "distancia"
         else:
-            conductor_seleccionado = candidatos[0]
-            motivo = "distancia"
+            motivo = "balanceado"
         
         # Determinar tarifa
         if self.modo_tarifa_alta:
