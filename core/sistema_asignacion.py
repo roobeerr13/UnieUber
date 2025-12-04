@@ -195,6 +195,12 @@ class SistemaAsignacion:
         # Calcular score combinado para cada conductor
         scores = {}
         distancias = {}
+        
+        # Encontrar el conductor con menos viajes para balancear
+        min_viajes = min(c.viajes_hoy for c in conductores_disponibles)
+        max_viajes = max(c.viajes_hoy for c in conductores_disponibles)
+        diferencia_viajes = max_viajes - min_viajes
+        
         for conductor in conductores_disponibles:
             pos_conductor = getattr(conductor, 'posicion', (0, 0))
             pos_cliente = getattr(cliente, 'posicion', (0, 0))
@@ -208,11 +214,24 @@ class SistemaAsignacion:
             senafiris_score = self.calcular_puntuacion_senafiris(conductor)
             
             # Penalización por carga (más viajes = peor)
-            carga_penalty = conductor.viajes_hoy * 0.5
+            # Aumentamos el peso de la penalización para balancear mejor
+            # Si hay diferencia de viajes, penalizamos más a los que tienen más
+            if diferencia_viajes > 0:
+                # Penalización proporcional: si tiene más viajes que el mínimo, penalizar más
+                viajes_extra = conductor.viajes_hoy - min_viajes
+                carga_penalty = viajes_extra * 2.0  # Penalización más fuerte
+            else:
+                carga_penalty = 0
             
-            # Score combinado: distancia + penalización carga - bonus Senafiris
+            # Bonus por tener menos viajes (para balancear)
+            if conductor.viajes_hoy == min_viajes and diferencia_viajes > 0:
+                bonus_balance = 1.0  # Bonus para el que tiene menos viajes
+            else:
+                bonus_balance = 0
+            
+            # Score combinado: distancia + penalización carga - bonus Senafiris - bonus balance
             # Normalizamos Senafiris para que tenga menos peso que la distancia
-            score_final = dist_score + carga_penalty - (senafiris_score / 50)
+            score_final = dist_score + carga_penalty - (senafiris_score / 50) - bonus_balance
             
             scores[conductor] = score_final
         
@@ -220,18 +239,25 @@ class SistemaAsignacion:
         conductor_seleccionado = min(conductores_disponibles, key=lambda c: scores[c])
         distancia_minima = distancias[conductor_seleccionado]
         
+        # Debug: mostrar scores para entender la selección
+        print(f"[Asignación] Scores: {[(c.nombre, round(scores[c], 2), f'viajes:{c.viajes_hoy}') for c in conductores_disponibles]}")
+        print(f"[Asignación] Seleccionado: {conductor_seleccionado.nombre} (score: {round(scores[conductor_seleccionado], 2)})")
+        
         # Determinar motivo
-        if conductor_seleccionado.viajes_hoy == min(c.viajes_hoy for c in conductores_disponibles):
+        min_viajes_global = min(c.viajes_hoy for c in conductores_disponibles)
+        if conductor_seleccionado.viajes_hoy == min_viajes_global and diferencia_viajes > 0:
             motivo = "balanceado"
-        elif scores[conductor_seleccionado] == min(scores.values()):
-            # Si el score es muy cercano a otros, fue por Senafiris
+        else:
+            # Verificar si fue por distancia o Senafiris
             otros_scores = [s for c, s in scores.items() if c != conductor_seleccionado]
-            if otros_scores and abs(scores[conductor_seleccionado] - min(otros_scores)) < 0.1:
-                motivo = "senafiris"
+            if otros_scores:
+                score_diferencia = min(abs(scores[conductor_seleccionado] - s) for s in otros_scores)
+                if score_diferencia < 0.5:  # Scores muy cercanos
+                    motivo = "senafiris"
+                else:
+                    motivo = "distancia"
             else:
                 motivo = "distancia"
-        else:
-            motivo = "balanceado"
         
         # Determinar tarifa
         if self.modo_tarifa_alta:

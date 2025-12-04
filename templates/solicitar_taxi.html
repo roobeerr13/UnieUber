@@ -111,21 +111,27 @@
                   opacity: 0.7
                 }).addTo(map);
                 
-                // Animación del taxi
+                // Animación del taxi (solo una vez)
                 let taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon}).addTo(map);
                 let steps = 50;
                 let currentStep = 0;
+                let animationComplete = false;
                 
                 function animateTaxi() {
-                  if (currentStep > steps) {
-                    currentStep = 0; // Reiniciar animación
+                  if (animationComplete) return;
+                  
+                  if (currentStep <= steps) {
+                    const progress = currentStep / steps;
+                    const lat = origLat + (destLat - origLat) * progress;
+                    const lon = origLon + (destLon - origLon) * progress;
+                    taxiMarker.setLatLng([lat, lon]);
+                    currentStep++;
+                    setTimeout(animateTaxi, 100);
+                  } else {
+                    // Llegó al destino, mantenerlo ahí
+                    taxiMarker.setLatLng([destLat, destLon]);
+                    animationComplete = true;
                   }
-                  const progress = currentStep / steps;
-                  const lat = origLat + (destLat - origLat) * progress;
-                  const lon = origLon + (destLon - origLon) * progress;
-                  taxiMarker.setLatLng([lat, lon]);
-                  currentStep++;
-                  setTimeout(animateTaxi, 100);
                 }
                 animateTaxi();
               </script>
