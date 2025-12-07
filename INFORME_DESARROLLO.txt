@@ -1,0 +1,98 @@
+INFORME DE DESARROLLO Y FUNCIONALIDAD DEL PROYECTO UNIETAXI
+===========================================================
+Fecha: 12 de Diciembre de 2025
+Proyecto: Sincronización y Comunicación entre Procesos (UNIETAXI)
+
+1. INTRODUCCIÓN Y METODOLOGÍA
+-----------------------------
+Este informe detalla el abordaje técnico implementado para resolver el problema de gestión concurrente de taxis y clientes del sistema UNIETAXI. El objetivo principal ha sido simular un entorno realista ("Real-Time") utilizando Hilos (Threads) para representar a cada entidad independiente (Taxistas y Clientes) y mecanismos de sincronización para controlar el acceso a los recursos compartidos.
+
+Metodología de "Intra-documentación":
+Se ha llevado a cabo una revisión exhaustiva del código fuente para añadir comentarios descriptivos que explican NO SOLO qué hace el código, sino POR QUÉ lo hace, detallando las secciones críticas protegidas por Locks (Cerrojos) y el flujo de los Semáforos.
+
+2. ESTRUCTURA DUAL DEL SISTEMA (DOS MÓDULOS DE EJECUCIÓN)
+---------------------------------------------------------
+Para satisfacer tanto los requisitos de una aplicación moderna como las exigencias específicas de entrada/salida del examen, el proyecto cuenta con dos puntos de entrada principales. Es fundamental entender la diferencia entre ambos:
+
+A. main.py (VERSIÓN WEB / FLASK)
+   - Objetivo: Proporcionar una interfaz gráfica amigable e interactiva.
+   - Tecnología: Utiliza el framework Flask para levantar un servidor web local.
+   - Funcionamiento: 
+     * Permite al usuario interactuar con un mapa, solicitar taxis mediante formularios visuales y ver reportes en HTML.
+     * Los hilos se ejecutan en segundo plano ("backend") mientras el navegador muestra el estado.
+   - Uso: Ideal para demostraciones visuales y pruebas de usabilidad "humana".
+
+B. main_terminal.py (VERSIÓN EXAMEN / TERMINAL)
+   - Objetivo: Cumplir estrictamente con el formato de Entrada/Salida basado en archivos de texto especificado en el enunciado del examen ("Parte Batch").
+   - Funcionamiento:
+     * NO levanta servidor web. Se ejecuta puramente en la consola.
+     * Lee la configuración inicial (días, taxis por día) desde 'taxis_input.txt'.
+     * Lee la lista de clientes desde 'clientes_input.txt'.
+     * Ejecuta la simulación día a día, lanzando hilos y procesando solicitudes automáticamente.
+     * Genera los reportes finales directamente en archivos de texto (.txt).
+   - Uso: Debe ser el archivo a ejecutar para la entrega del examen o para validaciones automáticas de datos masivos.
+
+3. FUNCIONES Y MÓDULOS IMPLEMENTADOS
+------------------------------------
+Para adaptar el sistema base a los requisitos del examen, se han creado nuevas clases y refactorizado la lógica existente:
+
+3.1 Nuevo Módulo: core/data_loader.py
+   - Función `leer_archivo_taxis(filepath)`:
+     * Parsea el archivo de texto estructurado por días ('d') y cantidades ('Mi').
+     * Convierte las líneas de texto CSV en objetos Taxi con sus atributos (Cédula, Placa, Disponibilidad, etc.).
+   - Función `leer_archivo_clientes(filepath)`:
+     * Carga la base de datos de clientes afiliados desde un archivo de texto.
+
+3.2 Nuevo Módulo: core/report_generator.py
+   - Función `generar_reporte_diario(...)`:
+     * Genera el "Reporte Parte I" requerido. Escribe en un archivo de texto el resumen financiero del día y el detalle de los 5 servicios de seguimiento, formateado exactamente como se solicitó.
+   - Función `generar_reporte_mensual(...)`:
+     * Genera el "Reporte Parte II". Calcula para cada taxista el Total Generado, el Importe Mensual (20% para la empresa) y la Ganancia Final (80%), escribiéndolo en 'reporte_mensual_examen.txt'.
+   - Función `generar_control_servicios(...)`:
+     * Vuelca el histórico completo de todas las solicitudes (Aceptadas y Rechazadas) en 'control_servicios_examen.txt'.
+
+3.3 Mejoras en core/sistema.py y core/taxi.py
+   - Implementación de `threading.Lock()`: Se han añadido cerrojos (`mutex_match`, `mutex_servicio`, `mutex_findeldia`) para proteger las Secciones Críticas.
+     * Ejemplo: Cuando un taxi finaliza un viaje, debe actualizar su ganancia acumulada y la del día. Si dos taxis lo hicieran al mismo tiempo sin protección, el contador de dinero podría corromperse (Condición de Carrera). El Lock asegura que solo uno pase a la vez.
+   - Implementación de `threading.Event()`: Se optimizó la espera de los taxis. En lugar de estar preguntando constantemente "¿Tengo viaje?" (Busy Wait), ahora "duermen" y el sistema los despierta con un Evento cuando hay un cliente.
+
+3.4 Estructura del Núcleo (Core) - Módulos Base
+   Además de los módulos nuevos, el sistema se apoya en una arquitectura robusta:
+   - core/sistema_asignacion.py:
+     * Contiene la lógica del algoritmo "Senafiris" para desempate de conductores.
+     * Gestiona las tarifas dinámicas según la hora del día.
+     * Implementa la priorización de clientes por "estrellas" y frecuencia.
+   - core/cliente_mejorado.py:
+     * Extiende la funcionalidad del cliente base para incluir persistencia de atributos como frecuencia de viajes y calificación promedio.
+   - core/clientes_simulados.py:
+     * Generador de tráfico sintético. Crea hilos de clientes que realizan solicitudes periódicas automáticamente a lo largo de la simulación.
+   - core/cliente.py:
+     * Define la clase Hilo para el Cliente, que maneja el ciclo de vida de una solicitud individual (pedir, esperar, terminar).
+   - core/taxi.py:
+     * Define la clase Hilo para el Taxi, con su lógica de movimiento simulado, cálculo de costos y manejo de estados (ocupado/libre).
+
+3.5 Recursos de la Interfaz Web (Solo para main.py)
+   Para la versión gráfica con Flask, se incluyen las siguientes carpetas estándar:
+   - templates/:
+     * Contiene las plantillas HTML (Jinja2) que renderizan la interfaz (mapas, formularios, tablas de reporte).
+     * Archivos clave: index.html (mapa principal), solicitar_taxi.html (formulario), reportes.html (tabla de datos).
+   - static/:
+     * Estilos CSS, scripts de JavaScript y recursos multimedia (imágenes/iconos) necesarios para el "Look & Feel" de la aplicación web.
+
+3.6 Documentación Adicional
+   - SISTEMA_ASIGNACION_DOC.md:
+     * Documentación técnica específica del algoritmo de asignación avanzado. 
+     * Detalla las fórmulas matemáticas del puntaje "Senafiris", las reglas de negocio para tarifas dinámicas y los criterios de prioridad de clientes.
+     * Es un complemento vital para entender la lógica interna de `core/sistema_asignacion.py`.
+
+4. CÓMO EJECUTAR EL PROYECTO
+----------------------------
+Para la revisión del examen, se recomienda seguir estos pasos:
+
+1. Asegúrese de que existen los archivos 'taxis_input.txt' y 'clientes_input.txt' en la carpeta raíz (el sistema genera ejemplos si no están).
+2. Abra una terminal en la carpeta del proyecto.
+3. Ejecute: python main_terminal.py
+4. Espere a que finalice la simulación de todos los días configurados.
+5. Abra los archivos .txt generados para verificar los resultados.
+
+Este enfoque dual asegura que el proyecto no solo cumple con la "letra" del examen (archivos de texto, hilos), sino que también demuestra capacidad de desarrollo de software moderno (Interfaz Web, Arquitectura Modular).
