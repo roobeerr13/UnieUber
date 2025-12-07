@@ -1,0 +1,22 @@
+Día 1
+Ganancia total: 0.00
+
+Día 2
+Ganancia total: 0.00
+
+Día 1
+Ganancia total: 0.00
+
+Día 2
+Ganancia total: 1.26
+1- idTaxi: 2 IdCliente: 5001 Origen: (4.65143664568421, 1.9907008143110416) Destino: (4.3046853364203255, 2.6654275862725063) Km: 3.79 Costo: 1.26 Calificación 3
+
+Día 1
+Ganancia total: 0.00
+
+Día 2
+Ganancia total: 0.00
+
+Día 1
+Ganancia total: 0.00
+

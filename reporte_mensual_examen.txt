@@ -1,0 +1,35 @@
+REPORTE MENSUAL DE GANANCIAS
+============================
+
+IDTaxista: 1 :: Nombre: Ana
+Placa: ABC123 :: Marca: N/A :: Modelo: N/A
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 2 :: Nombre: Luis
+Placa: DEF456 :: Marca: N/A :: Modelo: N/A
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 3 :: Nombre: Marta
+Placa: GHI789 :: Marca: N/A :: Modelo: N/A
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 1001 :: Nombre: Juan Perez
+Placa: ABC1234 :: Marca: Toyota :: Modelo: Corolla
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 1002 :: Nombre: Ana Lopez
+Placa: XYZ9876 :: Marca: Ford :: Modelo: Fiesta
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 1003 :: Nombre: Carlos Ruiz
+Placa: DEF4567 :: Marca: Chevrolet :: Modelo: Spark
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 1001 :: Nombre: Juan Perez
+Placa: ABC1234 :: Marca: Toyota :: Modelo: Corolla
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------
+IDTaxista: 1004 :: Nombre: Marta Diaz
+Placa: GHI1122 :: Marca: Nissan :: Modelo: Sentra
+Total Generado: 0.00 :: Importe Mensual: 0.00 :: Ganancia del taxista: 0.00
+--------------------------------------------------

@@ -1,0 +1,21 @@
+CONTROL DE SERVICIOS (HISTÓRICO)
+================================
+
+Día: 2 | Estado: RECHAZADA
+Taxi: None | Cliente: 5001
+Origen: (6.865295067799849, 4.319401161375626) -> Destino: (7.5184400583942645, 8.841223512533409)
+Distancia: 0.00 km | Costo: 0.00
+Calificación: N/A
+----------------------------------------
+Día: 2 | Estado: RECHAZADA
+Taxi: None | Cliente: 5002
+Origen: (7.897412899748836, 4.803485553964427) -> Destino: (6.53780882577716, 8.67013582255407)
+Distancia: 0.00 km | Costo: 0.00
+Calificación: N/A
+----------------------------------------
+Día: 2 | Estado: RECHAZADA
+Taxi: None | Cliente: 5001
+Origen: (6.388021725892523, 0.1873382374996324) -> Destino: (2.945815788846673, 0.8579628649852522)
+Distancia: 0.00 km | Costo: 0.00
+Calificación: N/A
+----------------------------------------

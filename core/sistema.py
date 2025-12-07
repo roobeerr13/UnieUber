@@ -18,10 +18,20 @@ class SistemaCentral:
         self.ganancia_por_taxi: Dict[int, float] = {}
 
         # Contador de servicios activos
+        # === RECURSOS CRÍTICOS Y SINCRONIZACIÓN ===
+        # Contador de servicios activos (Recurso Crítico)
         self.servicios_activos: int = 0
+        
+        # Mutex para proteger la asignación de taxis (evitar doble asignación)
         self.mutex_match = threading.Lock()          # "mutexMatch"
+        
+        # Mutex para proteger la verificación de fin de día y contador de servicios
         self.mutex_findeldia = threading.Lock()      # "mutexFindelDía"
+        
+        # Mutex para proteger la actualización de datos del taxi y estadísticas (sección crítica de escritura)
         self.mutex_servicio = threading.Lock()       # "mutexServicio"
+        
+        # Mutex para proteger la lista de control de servicios
         self.mutex_control_servicios = threading.Lock()  # "mutexControlServicios"
 
         # Semáforos / Eventos
@@ -63,6 +73,7 @@ class SistemaCentral:
             print(f"[Sistema] Activando servicio. Servicios activos: {self.servicios_activos}")
 
         # Región crítica: match (no puede haber dos clientes haciendo match a la vez)
+        # Se utiliza un Lock para asegurar EXCLUSIÓN MUTUA en la asignación.
         taxi_asignado = self._match(solicitud)
 
         if taxi_asignado is None:
@@ -156,7 +167,10 @@ class SistemaCentral:
     def registrar_final_viaje(self, taxi: Taxi, solicitud: SolicitudServicio,
                               km: float, costo: float, calificacion: float):
         # Región crítica: modificación de servicios + seguimiento
+        # Aquí se modifican múltiples estructuras compartidas (ganancia, listas),
+        # por lo que se requiere sincronización estricta.
         with self.mutex_servicio:
+            # Sección Crítica: Actualización de estado del taxi
             taxi.actualizar_calificacion(calificacion)
             taxi.acumular_ganancia(costo)
             

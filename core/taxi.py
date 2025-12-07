@@ -19,6 +19,10 @@ class SolicitudServicio:
 
 
 class Taxi(threading.Thread):
+    """
+    Representa un Taxi como un Hilo independiente (Thread).
+    Cada taxi se ejecuta concurrentemente en el sistema.
+    """
     def __init__(self, id_taxi, nombre, placa, velocidad_kph, sistema_central, posicion_inicial=(0, 0)):
         super().__init__(name=f"Taxi-{id_taxi}", daemon=True)
         self.id_taxi = id_taxi
@@ -39,6 +43,8 @@ class Taxi(threading.Thread):
         self.ultima_actualizacion_tiempo = time.time()
 
         # Sincronización con el SistemaCentral
+        # Evento para señalar cuándo se le ha asignado un viaje.
+        # Permite que el hilo "duerma" (wait) hasta que el sistema lo despierte.
         self._viaje_asignado_event = threading.Event()
         self._solicitud_actual = None
 
@@ -48,7 +54,12 @@ class Taxi(threading.Thread):
         self._viaje_asignado_event.set()
 
     def run(self):
+        """
+        Ciclo de vida del hilo Taxi.
+        Espera asignaciones, realiza el viaje (simulado) y notifica finalización.
+        """
         while True:
+            # Espera PASIVA hasta que se active el evento (ahorro de CPU)
             self._viaje_asignado_event.wait()
 
             solicitud = self._solicitud_actual
