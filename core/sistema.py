@@ -206,15 +206,18 @@ class SistemaCentral:
                 aceptado=True
             )
 
-            # Registro en servicios_seguimiento (máx. 5 por día)
-            if len(self.servicios_seguimiento) < 5:
-                self._registrar_servicio_seguimiento(
-                    solicitud=solicitud,
-                    taxi_id=taxi.id_taxi,
-                    km=km,
-                    costo=costo,
-                    calificacion=calificacion,
-                )
+            # Registro en servicios_seguimiento (Mantenemos los 5 ÚLTIMOS)
+            self._registrar_servicio_seguimiento(
+                solicitud=solicitud,
+                taxi_id=taxi.id_taxi,
+                km=km,
+                costo=costo,
+                calificacion=calificacion,
+            )
+            
+            # Si tenemos más de 5, eliminamos el más antiguo para dejar solo los últimos 5
+            while len(self.servicios_seguimiento) > 5:
+                self.servicios_seguimiento.pop(0)
 
         # Desactivación de servicio
         self._finalizar_servicio_con_viaje()

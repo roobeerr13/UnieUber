@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="ride-request-container">
-    <div class="ride-form-section">
-      <div class="card">
-        <div class="form-header">
-          <h2>🚖 Solicita tu viaje</h2>
-          <p class="card-subtitle">
-            Completa los datos para solicitar un taxi
-          </p>
-        </div>
-        <form method="post" class="uber-form" id="rideForm">
+<div class="ride-request-container">
+  <div class="ride-form-section">
+    <div class="card">
+      <div class="form-header">
+        <h2>🚖 Solicita tu viaje</h2>
+        <p class="card-subtitle">
+          Completa los datos para solicitar un taxi
+        </p>
+      </div>
+      <form method="post" class="uber-form" id="rideForm">
         <label>
           ID Cliente
           <input type="text" name="cliente_id" value="cliente-web">
@@ -43,292 +43,294 @@
           <input type="text" name="ciudad_destino" placeholder="Madrid">
         </label>
 
-          <button type="submit" class="btn-primary btn-large">🚖 Solicitar Taxi</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="ride-info-section">
-      {% if direccion_origen and direccion_destino %}
-        <div class="card map-card">
-          <div class="map-header">
-            <span class="dot live"></span> 
-            <span>Ruta del viaje</span>
-          </div>
-          <div class="map-body">
-            {% if orig_lat is not none and orig_lon is not none and dest_lat is not none and dest_lon is not none %}
-              <div class="map-inner">
-                <div id="map"></div>
-              </div>
-              <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-              <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-              <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
-              <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-              <script>
-                const origLat = parseFloat("{{ orig_lat|default('0') }}");
-                const origLon = parseFloat("{{ orig_lon|default('0') }}");
-                const destLat = parseFloat("{{ dest_lat|default('0') }}");
-                const destLon = parseFloat("{{ dest_lon|default('0') }}");
-                
-                // Crear mapa
-                const map = L.map('map', {
-                  zoomControl: true,
-                  attributionControl: true
-                }).setView([(origLat + destLat)/2, (origLon + destLon)/2], 12);
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                  maxZoom: 19,
-                  attribution: '© OpenStreetMap'
-                }).addTo(map);
-                
-                // Iconos personalizados
-                const originIcon = L.divIcon({
-                  className: 'custom-marker origin-marker',
-                  html: '<div class="marker-pin origin">📍</div>',
-                  iconSize: [30, 30],
-                  iconAnchor: [15, 30]
-                });
-                
-                const destIcon = L.divIcon({
-                  className: 'custom-marker dest-marker',
-                  html: '<div class="marker-pin dest">🎯</div>',
-                  iconSize: [30, 30],
-                  iconAnchor: [15, 30]
-                });
-                
-                const taxiIcon = L.divIcon({
-                  className: 'custom-marker taxi-marker',
-                  html: '<div class="marker-pin taxi">🚖</div>',
-                  iconSize: [40, 40],
-                  iconAnchor: [20, 40]
-                });
-                
-                // Marcadores
-                const originMarker = L.marker([origLat, origLon], {icon: originIcon, zIndexOffset: 1000}).addTo(map);
-                originMarker.bindPopup("<b>📍 Origen</b><br>" + "{{ direccion_origen|e }}").openPopup();
-                
-                const destMarker = L.marker([destLat, destLon], {icon: destIcon, zIndexOffset: 1000}).addTo(map);
-                destMarker.bindPopup("<b>🎯 Destino</b><br>" + "{{ direccion_destino|e }}");
-                
-                // Obtener ruta real por calles usando OSRM
-                let routeCoordinates = [];
-                let routePolyline = null;
-                let taxiMarker = null;
-                
-                // Usar OSRM para obtener ruta por calles
-                const routingUrl = `https://router.project-osrm.org/route/v1/driving/${origLon},${origLat};${destLon},${destLat}?overview=full&geometries=geojson`;
-                
-                fetch(routingUrl)
-                  .then(response => response.json())
-                  .then(data => {
-                    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-                      // Obtener coordenadas de la ruta
-                      routeCoordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-                      
-                      // Dibujar ruta en el mapa
-                      routePolyline = L.polyline(routeCoordinates, {
-                        color: '#00D4AA',
-                        weight: 5,
-                        opacity: 0.8,
-                        smoothFactor: 1
-                      }).addTo(map);
-                      
-                      // Ajustar vista al mapa
-                      map.fitBounds(routePolyline.getBounds(), {padding: [50, 50]});
-                      
-                      // Crear marcador del taxi
-                      taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon, zIndexOffset: 2000}).addTo(map);
-                      
-                      // Animar taxi siguiendo la ruta
-                      animateTaxiAlongRoute();
-                    } else {
-                      // Si falla OSRM, usar ruta recta como fallback
-                      console.warn('OSRM no disponible, usando ruta recta');
-                      routeCoordinates = [[origLat, origLon], [destLat, destLon]];
-                      routePolyline = L.polyline(routeCoordinates, {
-                        color: '#00D4AA',
-                        weight: 5,
-                        opacity: 0.8
-                      }).addTo(map);
-                      
-                      taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon, zIndexOffset: 2000}).addTo(map);
-                      animateTaxiStraight();
-                    }
-                  })
-                  .catch(error => {
-                    console.error('Error obteniendo ruta:', error);
-                    // Fallback a ruta recta
-                    routeCoordinates = [[origLat, origLon], [destLat, destLon]];
-                    routePolyline = L.polyline(routeCoordinates, {
-                      color: '#00D4AA',
-                      weight: 5,
-                      opacity: 0.8
-                    }).addTo(map);
-                    
-                    taxiMarker = L.marker([origLat, origLon], {icon: taxiIcon, zIndexOffset: 2000}).addTo(map);
-                    animateTaxiStraight();
-                  });
-                
-                // Animar taxi siguiendo la ruta real
-                function animateTaxiAlongRoute() {
-                  if (!taxiMarker || routeCoordinates.length === 0) return;
-                  
-                  let currentIndex = 0;
-                  let animationComplete = false;
-                  
-                  function moveTaxi() {
-                    if (animationComplete) return;
-                    
-                    if (currentIndex < routeCoordinates.length - 1) {
-                      const current = routeCoordinates[currentIndex];
-                      const next = routeCoordinates[currentIndex + 1];
-                      
-                      // Calcular distancia entre puntos
-                      const latDiff = next[0] - current[0];
-                      const lonDiff = next[1] - current[1];
-                      const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
-                      
-                      // Mover en pasos pequeños
-                      const steps = Math.max(5, Math.ceil(distance * 1000));
-                      let step = 0;
-                      
-                      function moveStep() {
-                        if (step < steps) {
-                          const progress = step / steps;
-                          const lat = current[0] + latDiff * progress;
-                          const lon = current[1] + lonDiff * progress;
-                          taxiMarker.setLatLng([lat, lon]);
-                          step++;
-                          setTimeout(moveStep, 50);
-                        } else {
-                          currentIndex++;
-                          if (currentIndex < routeCoordinates.length - 1) {
-                            setTimeout(moveTaxi, 10);
-                          } else {
-                            // Llegó al destino
-                            taxiMarker.setLatLng(routeCoordinates[routeCoordinates.length - 1]);
-                            animationComplete = true;
-                          }
-                        }
-                      }
-                      moveStep();
-                    } else {
-                      animationComplete = true;
-                    }
-                  }
-                  
-                  moveTaxi();
-                }
-                
-                // Fallback: animación en línea recta
-                function animateTaxiStraight() {
-                  if (!taxiMarker) return;
-                  
-                  let steps = 100;
-                  let currentStep = 0;
-                  let animationComplete = false;
-                  
-                  function animate() {
-                    if (animationComplete) return;
-                    
-                    if (currentStep <= steps) {
-                      const progress = currentStep / steps;
-                      const lat = origLat + (destLat - origLat) * progress;
-                      const lon = origLon + (destLon - origLon) * progress;
-                      taxiMarker.setLatLng([lat, lon]);
-                      currentStep++;
-                      setTimeout(animate, 80);
-                    } else {
-                      taxiMarker.setLatLng([destLat, destLon]);
-                      animationComplete = true;
-                    }
-                  }
-                  animate();
-                }
-              </script>
-            {% else %}
-              <div class="map-placeholder">
-                <div class="placeholder-icon">🗺️</div>
-                <p>Calculando ruta...</p>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      {% else %}
-        <div class="card map-card">
-          <div class="map-placeholder">
-            <div class="placeholder-icon">📍</div>
-            <p>Completa el formulario para ver la ruta</p>
-          </div>
-        </div>
-      {% endif %}
-      
-      {% if dist_km is not none and precio is not none %}
-        <div class="card ride-summary-card">
-          <div class="ride-summary-header">
-            <h3>📊 Resumen del viaje</h3>
-          </div>
-          <div class="ride-summary-content">
-            <div class="summary-item">
-              <span class="summary-label">Distancia</span>
-              <span class="summary-value">{{ '%.2f'|format(dist_km) }} km</span>
-            </div>
-            <div class="summary-item highlight">
-              <span class="summary-label">Precio estimado</span>
-              <span class="summary-value price">{{ '%.2f'|format(precio) }} €</span>
-            </div>
-            {% if modo_tarifa_alta %}
-            <div class="summary-item">
-              <span class="summary-label">Tarifa</span>
-              <span class="summary-value tarifa-alta">🌙 Alta</span>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-      {% endif %}
-        
-        {% if taxi_info %}
-          <div class="taxi-assigned-card">
-            <div class="taxi-assigned-header">
-              <div class="taxi-icon-large">🚖</div>
-              <div class="taxi-assigned-info">
-                <div class="taxi-assigned-title">Tu conductor</div>
-                <div class="taxi-assigned-name">{{ taxi_info.nombre }}</div>
-                <div class="taxi-assigned-placa">Placa: {{ taxi_info.placa }}</div>
-              </div>
-            </div>
-            <div class="taxi-assigned-details">
-              <div class="taxi-detail-item">
-                <span class="taxi-detail-label">⭐ Calificación</span>
-                <span class="taxi-detail-value">{{ taxi_info.calificacion }}/5.0</span>
-              </div>
-              <div class="taxi-detail-item">
-                <span class="taxi-detail-label">📊 Viajes hoy</span>
-                <span class="taxi-detail-value">{{ taxi_info.viajes_hoy }}</span>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        
-        {% if cliente_info %}
-          <div class="cliente-profile-card">
-            <div class="cliente-profile-header">
-              <span class="cliente-profile-icon">👤</span>
-              <span class="cliente-profile-title">Tu Perfil</span>
-            </div>
-            <div class="cliente-profile-stats">
-              <div class="cliente-stat">
-                <span class="cliente-stat-label">Viajes realizados</span>
-                <span class="cliente-stat-value">{{ cliente_info.frecuencia }}</span>
-              </div>
-              <div class="cliente-stat">
-                <span class="cliente-stat-label">Nivel</span>
-                <span class="cliente-stat-stars">{% for i in range(cliente_info.estrellas) %}⭐{% endfor %}</span>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-        
+        <button type="submit" class="btn-primary btn-large">🚖 Solicitar Taxi</button>
+      </form>
     </div>
   </div>
+
+  <div class="ride-info-section">
+    {% if direccion_origen and direccion_destino %}
+    <div class="card map-card">
+      <div class="map-header">
+        <span class="dot live"></span>
+        <span>Ruta del viaje</span>
+      </div>
+      <div class="map-body">
+        {% if orig_lat is not none and orig_lon is not none and dest_lat is not none and dest_lon is not none %}
+        <div class="map-inner">
+          <div id="map"></div>
+        </div>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+        <link rel="stylesheet"
+          href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+        <script>
+          const origLat = parseFloat("{{ orig_lat|default('0') }}");
+          const origLon = parseFloat("{{ orig_lon|default('0') }}");
+          const destLat = parseFloat("{{ dest_lat|default('0') }}");
+          const destLon = parseFloat("{{ dest_lon|default('0') }}");
+
+          // Crear mapa
+          const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: true
+          }).setView([(origLat + destLat) / 2, (origLon + destLon) / 2], 12);
+
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+          }).addTo(map);
+
+          // Iconos personalizados
+          const originIcon = L.divIcon({
+            className: 'custom-marker origin-marker',
+            html: '<div class="marker-pin origin">📍</div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+          });
+
+          const destIcon = L.divIcon({
+            className: 'custom-marker dest-marker',
+            html: '<div class="marker-pin dest">🎯</div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+          });
+
+          const taxiIcon = L.icon({
+            iconUrl: "{{ url_for('static', filename='img/black_car.svg') }}",
+            iconSize: [50, 85],
+            iconAnchor: [25, 42],
+            popupAnchor: [0, -40],
+            className: 'car-icon-rotated'
+          });
+
+          // Marcadores
+          const originMarker = L.marker([origLat, origLon], { icon: originIcon, zIndexOffset: 1000 }).addTo(map);
+          originMarker.bindPopup("<b>📍 Origen</b><br>" + "{{ direccion_origen|e }}").openPopup();
+
+          const destMarker = L.marker([destLat, destLon], { icon: destIcon, zIndexOffset: 1000 }).addTo(map);
+          destMarker.bindPopup("<b>🎯 Destino</b><br>" + "{{ direccion_destino|e }}");
+
+          // Obtener ruta real por calles usando OSRM
+          let routeCoordinates = [];
+          let routePolyline = null;
+          let taxiMarker = null;
+
+          // Usar OSRM para obtener ruta por calles
+          const routingUrl = `https://router.project-osrm.org/route/v1/driving/${origLon},${origLat};${destLon},${destLat}?overview=full&geometries=geojson`;
+
+          fetch(routingUrl)
+            .then(response => response.json())
+            .then(data => {
+              if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                // Obtener coordenadas de la ruta
+                routeCoordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+
+                // Dibujar ruta en el mapa
+                routePolyline = L.polyline(routeCoordinates, {
+                  color: '#bf00ff', // GTA Purple
+                  weight: 8,
+                  opacity: 0.9,
+                  smoothFactor: 1
+                }).addTo(map);
+
+                // Ajustar vista al mapa
+                map.fitBounds(routePolyline.getBounds(), { padding: [50, 50] });
+
+                // Crear marcador del taxi
+                taxiMarker = L.marker([origLat, origLon], { icon: taxiIcon, zIndexOffset: 2000 }).addTo(map);
+
+                // Animar taxi siguiendo la ruta
+                animateTaxiAlongRoute();
+              } else {
+                // Si falla OSRM, usar ruta recta como fallback
+                console.warn('OSRM no disponible, usando ruta recta');
+                routeCoordinates = [[origLat, origLon], [destLat, destLon]];
+                routePolyline = L.polyline(routeCoordinates, {
+                  color: '#bf00ff',
+                  weight: 8,
+                  opacity: 0.9
+                }).addTo(map);
+
+                taxiMarker = L.marker([origLat, origLon], { icon: taxiIcon, zIndexOffset: 2000 }).addTo(map);
+                animateTaxiStraight();
+              }
+            })
+            .catch(error => {
+              console.error('Error obteniendo ruta:', error);
+              // Fallback a ruta recta
+              routeCoordinates = [[origLat, origLon], [destLat, destLon]];
+              routePolyline = L.polyline(routeCoordinates, {
+                color: '#D500F9',
+                weight: 6,
+                opacity: 0.9
+              }).addTo(map);
+
+              taxiMarker = L.marker([origLat, origLon], { icon: taxiIcon, zIndexOffset: 2000 }).addTo(map);
+              animateTaxiStraight();
+            });
+
+          // Animar taxi siguiendo la ruta real
+          function animateTaxiAlongRoute() {
+            if (!taxiMarker || routeCoordinates.length === 0) return;
+
+            let currentIndex = 0;
+            let animationComplete = false;
+
+            function moveTaxi() {
+              if (animationComplete) return;
+
+              if (currentIndex < routeCoordinates.length - 1) {
+                const current = routeCoordinates[currentIndex];
+                const next = routeCoordinates[currentIndex + 1];
+
+                // Calcular distancia entre puntos
+                const latDiff = next[0] - current[0];
+                const lonDiff = next[1] - current[1];
+                const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
+
+                // Mover en pasos pequeños
+                const steps = Math.max(5, Math.ceil(distance * 1000));
+                let step = 0;
+
+                function moveStep() {
+                  if (step < steps) {
+                    const progress = step / steps;
+                    const lat = current[0] + latDiff * progress;
+                    const lon = current[1] + lonDiff * progress;
+                    taxiMarker.setLatLng([lat, lon]);
+                    step++;
+                    setTimeout(moveStep, 50);
+                  } else {
+                    currentIndex++;
+                    if (currentIndex < routeCoordinates.length - 1) {
+                      setTimeout(moveTaxi, 10);
+                    } else {
+                      // Llegó al destino
+                      taxiMarker.setLatLng(routeCoordinates[routeCoordinates.length - 1]);
+                      animationComplete = true;
+                    }
+                  }
+                }
+                moveStep();
+              } else {
+                animationComplete = true;
+              }
+            }
+
+            moveTaxi();
+          }
+
+          // Fallback: animación en línea recta
+          function animateTaxiStraight() {
+            if (!taxiMarker) return;
+
+            let steps = 100;
+            let currentStep = 0;
+            let animationComplete = false;
+
+            function animate() {
+              if (animationComplete) return;
+
+              if (currentStep <= steps) {
+                const progress = currentStep / steps;
+                const lat = origLat + (destLat - origLat) * progress;
+                const lon = origLon + (destLon - origLon) * progress;
+                taxiMarker.setLatLng([lat, lon]);
+                currentStep++;
+                setTimeout(animate, 80);
+              } else {
+                taxiMarker.setLatLng([destLat, destLon]);
+                animationComplete = true;
+              }
+            }
+            animate();
+          }
+        </script>
+        {% else %}
+        <div class="map-placeholder">
+          <div class="placeholder-icon">🗺️</div>
+          <p>Calculando ruta...</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card map-card">
+      <div class="map-placeholder">
+        <div class="placeholder-icon">📍</div>
+        <p>Completa el formulario para ver la ruta</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if dist_km is not none and precio is not none %}
+    <div class="card ride-summary-card">
+      <div class="ride-summary-header">
+        <h3>📊 Resumen del viaje</h3>
+      </div>
+      <div class="ride-summary-content">
+        <div class="summary-item">
+          <span class="summary-label">Distancia</span>
+          <span class="summary-value">{{ '%.2f'|format(dist_km) }} km</span>
+        </div>
+        <div class="summary-item highlight">
+          <span class="summary-label">Precio estimado</span>
+          <span class="summary-value price">{{ '%.2f'|format(precio) }} €</span>
+        </div>
+        {% if modo_tarifa_alta %}
+        <div class="summary-item">
+          <span class="summary-label">Tarifa</span>
+          <span class="summary-value tarifa-alta">🌙 Alta</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if taxi_info %}
+    <div class="taxi-assigned-card">
+      <div class="taxi-assigned-header">
+        <div class="taxi-icon-large">🚖</div>
+        <div class="taxi-assigned-info">
+          <div class="taxi-assigned-title">Tu conductor</div>
+          <div class="taxi-assigned-name">{{ taxi_info.nombre }}</div>
+          <div class="taxi-assigned-placa">Placa: {{ taxi_info.placa }}</div>
+        </div>
+      </div>
+      <div class="taxi-assigned-details">
+        <div class="taxi-detail-item">
+          <span class="taxi-detail-label">⭐ Calificación</span>
+          <span class="taxi-detail-value">{{ taxi_info.calificacion }}/5.0</span>
+        </div>
+        <div class="taxi-detail-item">
+          <span class="taxi-detail-label">📊 Viajes hoy</span>
+          <span class="taxi-detail-value">{{ taxi_info.viajes_hoy }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if cliente_info %}
+    <div class="cliente-profile-card">
+      <div class="cliente-profile-header">
+        <span class="cliente-profile-icon">👤</span>
+        <span class="cliente-profile-title">Tu Perfil</span>
+      </div>
+      <div class="cliente-profile-stats">
+        <div class="cliente-stat">
+          <span class="cliente-stat-label">Viajes realizados</span>
+          <span class="cliente-stat-value">{{ cliente_info.frecuencia }}</span>
+        </div>
+        <div class="cliente-stat">
+          <span class="cliente-stat-label">Nivel</span>
+          <span class="cliente-stat-stars">{% for i in range(cliente_info.estrellas) %}⭐{% endfor %}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
 {% endblock %}
