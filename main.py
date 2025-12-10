@@ -12,10 +12,6 @@ sistema = SistemaCentral()
 
 
 def geocode_address(address: str):
-    """
-    Usa Nominatim (OpenStreetMap) para obtener lat/lon de una dirección.
-    Gratis, pero hay que usar un User-Agent identificable.
-    """
     if not address:
         return None, None
 
